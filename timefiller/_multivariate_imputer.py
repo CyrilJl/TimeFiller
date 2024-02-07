@@ -1,124 +1,126 @@
-from typing import Union
+# -*- coding: utf-8 -*-
+
+# author : Cyril Joly
 
 import numpy as np
-import pandas as pd
 from optimask import OptiMask
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import Lasso
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import PolynomialFeatures, RobustScaler
+
+from ._misc import check_params
 
 
 class ImputeMultiVariate:
     """
-    The `ImputeMultiVariate` class has been developed to address the problem of imputing missing values in multivariate data.
-    It relies on regression techniques to estimate missing values using information available in other columns.
-    This class offers great flexibility by allowing users to specify a custom regression estimator, while also providing
-    a default option to use linear regression from the scikit-learn library. Additionally, it takes into account important parameters
-    such as the maximum fraction of missing values allowed in a column and the minimum number of samples required for
-    imputation.
-
-    Using the `ImputeMultiVariate` class transforms incomplete data into complete data rigorously, facilitating subsequent
-    analysis and modeling steps. This class is particularly useful for engineers and data analysts who want to effectively
-    handle missing values in their multivariate datasets.
+    The ImputeMultiVariate algorithm takes a distinct approach to multivariate data imputation,
+    relying on user-provided regressors (defaulting to Lasso regression) to establish relationships
+    between available data and the target column for imputation. Unlike conventional methods like
+    Expectation-Maximization or MICE, this algorithm dynamically identifies valid data subsets using
+    the OptiMask solver, adapting its input features for regression based on the most substantial
+    available data. This adaptability allows the algorithm to effectively handle complex
+    relationships in the data, offering a pragmatic and versatile solution for imputation.
     """
 
-    def __init__(self, estimator=None, na_frac_max=0.33, min_samples_train=50, verbose=False):
+    def __init__(self, estimator='positive with intercept', na_frac_max=0.33, min_samples_train=50, optimask_n_tries=5, verbose=False):
         """
-        Initialize an instance of the ImputeMultiVariate class.
+        Initialize the ImputeMultiVariate object.
 
-        Args:
-            estimator (object, optional): The regression estimator to use for imputation. Default uses
-            LinearRegression() from scikit-learn.
-            na_frac_max (float, optional): The maximum fraction of missing values accepted for a column to
-            impute. Default is 0.33.
-            min_samples_train (int, optional): The minimum number of samples required to perform imputation.
-            Default is 50.
-            verbose (bool, optional): If True, display debug information during imputation. Default is False.
+        Parameters:
+        - estimator (str or object): Estimator for imputation. Defaults to 'positive with intercept'.
+        - na_frac_max (float): Maximum fraction of missing values allowed for imputation.
+        - min_samples_train (int): Minimum number of samples required for training the estimator.
+        - optimask_n_tries (int): Number of tries for the OptiMask solver.
+        - verbose (bool): Verbosity level.
         """
-        self.estimator = LinearRegression() if estimator is None else estimator
+        self.estimator = self._process_estimator(estimator)
         self.na_frac_max = na_frac_max
         self.min_samples_train = min_samples_train
+        self.optimask = OptiMask(n_tries=optimask_n_tries)
         self.verbose = bool(verbose)
 
     @staticmethod
-    def process_subset(X, subset):
-        if subset is None:
-            return np.arange(X.shape[1])
-        if isinstance(X, pd.DataFrame):
-            columns = list(X.columns)
-            if isinstance(subset, str):
-                return [columns.index(subset)]
-            if isinstance(subset, (list, tuple)):
-                return [columns.index(_) for _ in subset]
-        if isinstance(X, np.ndarray):
-            if isinstance(subset, int):
-                return [subset]
-            if isinstance(subset, (list, tuple)):
-                return list(subset)
-        raise TypeError()
+    def _process_estimator(estimator):
+        if estimator == 'positive with intercept':
+            return make_pipeline(PolynomialFeatures(degree=1, include_bias=True),
+                                 Lasso(max_iter=10000, positive=True, fit_intercept=False))
+        if estimator == 'positive without intercept':
+            return make_pipeline(Lasso(max_iter=10000, positive=True, fit_intercept=False))
+        if estimator is None:
+            return Lasso(max_iter=10000)
+        if not (hasattr(estimator, 'fit') and hasattr(estimator, 'predict')):
+            raise TypeError()
+        else:
+            return estimator
 
     @staticmethod
-    def _prepare_data_for_imputation(Xc, mask_na, col_to_impute):
-        rows_to_impute = mask_na[:, col_to_impute].nonzero()[0]
-        other_cols = np.array([_ for _ in range(Xc.shape[1]) if _ != col_to_impute])
+    def _process_subset(X, subset, axis):
+        n = X.shape[axis]
+        check_params(subset, types=(int, list, np.ndarray, tuple, type(None)))
+        if isinstance(subset, int):
+            if subset >= n:
+                raise ValueError()
+            else:
+                return [subset]
+        if isinstance(subset, (list, np.ndarray, tuple)):
+            return sorted(list(subset))
+        if subset is None:
+            return list(range(n))
 
-        patterns, indexes = np.unique(~mask_na[rows_to_impute][:, other_cols], return_inverse=True, axis=0)
+    @staticmethod
+    def _prepare_data(mask_nan, col_to_impute, subset_rows):
+        rows_to_impute = np.flatnonzero(mask_nan[:, col_to_impute] & ~mask_nan.all(axis=1))
+        rows_to_impute = np.intersect1d(ar1=rows_to_impute, ar2=subset_rows)
+        other_cols = np.setdiff1d(ar1=np.arange(mask_nan.shape[1]), ar2=[col_to_impute])
+        patterns, indexes = np.unique(~mask_nan[rows_to_impute][:, other_cols], return_inverse=True, axis=0)
         index_predict = [rows_to_impute[indexes == k] for k in range(len(patterns))]
         columns = [other_cols[pattern] for pattern in patterns]
         return index_predict, columns
 
-    @staticmethod
-    def _prepare_train_and_pred_data(Xc, mask_na, columns, col_to_impute, index_predict):
-        trainable_rows = (~mask_na[:, col_to_impute]).nonzero()[0]
-        rows, cols = OptiMask().solve(Xc[trainable_rows][:, columns])
-
-        X_train, y_train = Xc[trainable_rows[rows]][:, columns[cols]], Xc[trainable_rows[rows]][:, col_to_impute]
-        X_predict = Xc[index_predict][:, columns[cols]]
+    def _prepare_train_and_pred_data(self, X, mask_nan, columns, col_to_impute, index_predict):
+        trainable_rows = np.flatnonzero(~mask_nan[:, col_to_impute])
+        rows, cols = self.optimask.solve(X[trainable_rows][:, columns])
+        selected_rows, selected_cols = trainable_rows[rows], columns[cols]
+        X_train, y_train = X[selected_rows][:, selected_cols], X[selected_rows][:, col_to_impute]
+        X_predict = X[index_predict][:, selected_cols]
         return X_train, y_train, X_predict
 
     def _perform_imputation(self, X_train, y_train, X_predict):
         model = self.estimator.fit(X_train, y_train)
         return model.predict(X_predict)
 
-    def _impute(self, X, subset):
-        Xc = np.array(X, dtype=float).copy()
-        ret = np.array(X, dtype=float).copy()
-
-        mask_na = np.isnan(Xc)
-
-        imputable_cols = (mask_na.mean(axis=0) <= self.na_frac_max).nonzero()[0]
-        subset = self.process_subset(X, subset)
-        imputable_cols = [k for k in imputable_cols if k in subset]
+    def _impute(self, X, subset_rows, subset_cols):
+        ret = np.array(X, dtype=float)
+        mask_nan = np.isnan(X)
+        nan_mean = mask_nan.mean(axis=0)
+        imputable_cols = (0 < mask_nan[subset_rows].sum(axis=0)) & (mask_nan.mean(axis=0) <= self.na_frac_max) & (np.nanstd(X, axis=0) > 0)
+        imputable_cols = np.intersect1d(np.flatnonzero(imputable_cols), subset_cols)
 
         for col_to_impute in imputable_cols:
-            index_predict, columns = self._prepare_data_for_imputation(Xc=Xc, mask_na=mask_na, col_to_impute=col_to_impute)
+            index_predict, columns = self._prepare_data(mask_nan=mask_nan, col_to_impute=col_to_impute, subset_rows=subset_rows)
             for cols, index in zip(columns, index_predict):
-                X_train, y_train, X_predict = self._prepare_train_and_pred_data(
-                    Xc=Xc, mask_na=mask_na, columns=cols, col_to_impute=col_to_impute, index_predict=index)
+                X_train, y_train, X_predict = self._prepare_train_and_pred_data(X, mask_nan, cols, col_to_impute, index)
                 if len(X_train) >= self.min_samples_train:
                     ret[index, col_to_impute] = self._perform_imputation(X_train, y_train, X_predict)
-
         return ret
 
-    def __call__(self, X: Union[np.ndarray, pd.DataFrame], subset=None) -> Union[np.ndarray, pd.DataFrame]:
+    def __call__(self, X, subset_rows=None, subset_cols=None) -> np.ndarray:
         """
-        Perform imputation on the input data.
+        Perform data imputation.
 
-        Args:
-            X (Union[np.ndarray, pd.DataFrame]): The input data.
-            subset (Optional[Union[str, int, List[Union[str, int]], Tuple[Union[str, int]]]], optional): The subset of columns to include in
-            imputation. Default is None.
+        Parameters:
+        - X (np.ndarray): Input array.
+        - subset_rows (list or None): Subset of rows to consider.
+        - subset_cols (list or None): Subset of columns to consider.
 
         Returns:
-            Union[np.ndarray, pd.DataFrame]: Data with imputed missing values.
-        Raises:
-            TypeError: If NaN values are present in the training data.
+        - np.ndarray: Imputed array.
         """
-        if not isinstance(X, (np.ndarray, pd.DataFrame)):
-            raise TypeError()
-        Xs = self._impute(X=X, subset=subset)
-
-        if isinstance(X, np.ndarray):
-            return Xs
-
-        if isinstance(X, pd.DataFrame):
-            kwargs = dict(index=X.index, columns=X.columns)
-            return pd.DataFrame(Xs, **kwargs)
+        check_params(X, types=np.ndarray)
+        subset_rows = self._process_subset(X=X, subset=subset_rows, axis=0)
+        subset_cols = self._process_subset(X=X, subset=subset_cols, axis=1)
+        scaler = RobustScaler(with_centering=False)
+        Xt = scaler.fit_transform(X)
+        Xt = self._impute(X=Xt, subset_rows=subset_rows, subset_cols=subset_cols)
+        Xt = scaler.inverse_transform(Xt)
+        return Xt
