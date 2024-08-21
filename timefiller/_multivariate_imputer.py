@@ -2,7 +2,7 @@ import numpy as np
 from optimask import OptiMask
 from sklearn.linear_model import LinearRegression
 
-from ._misc import check_params
+from ._misc import InvalidEstimatorError, InvalidSubsetError, check_params
 
 
 class ImputeMultiVariate:
@@ -13,10 +13,6 @@ class ImputeMultiVariate:
     a default option to use linear regression from the scikit-learn library. Additionally, it takes into account important parameters
     such as the maximum fraction of missing values allowed in a column and the minimum number of samples required for
     imputation.
-
-    Using the `ImputeMultiVariate` class transforms incomplete data into complete data rigorously, facilitating subsequent
-    analysis and modeling steps. This class is particularly useful for engineers and data analysts who want to effectively
-    handle missing values in their multivariate datasets.
     """
 
     def __init__(self, estimator=None, preprocessing=None, na_frac_max=0.33, min_samples_train=50, weighting_func=None, optimask_n_tries=1, verbose=False):
@@ -37,7 +33,7 @@ class ImputeMultiVariate:
         if estimator is None:
             return LinearRegression()
         if not (hasattr(estimator, 'fit') and hasattr(estimator, 'predict')):
-            raise TypeError()
+            raise InvalidEstimatorError()
         else:
             return estimator
 
@@ -47,7 +43,7 @@ class ImputeMultiVariate:
         check_params(subset, types=(int, list, np.ndarray, tuple, type(None)))
         if isinstance(subset, int):
             if subset >= n:
-                raise ValueError()
+                raise InvalidSubsetError(f"The subset index {subset} is out of bounds for axis {axis} with size {n}.")
             else:
                 return [subset]
         if isinstance(subset, (list, np.ndarray, tuple)):
@@ -66,10 +62,10 @@ class ImputeMultiVariate:
         return index_predict, columns
 
     def _prepare_train_and_pred_data(self, X, mask_nan, columns, col_to_impute, index_predict):
-        trainable_rows = np.flatnonzero(~mask_nan[:, col_to_impute])        
+        trainable_rows = np.flatnonzero(~mask_nan[:, col_to_impute])
         rows, cols = self.optimask.solve(X[np.ix_(trainable_rows, columns)])
         selected_rows, selected_cols = trainable_rows[rows], columns[cols]
-        X_train, y_train = X[np.ix_(selected_rows, selected_cols)], X[selected_rows, col_to_impute]        
+        X_train, y_train = X[np.ix_(selected_rows, selected_cols)], X[selected_rows, col_to_impute]
         X_predict = X[np.ix_(index_predict, selected_cols)]
         return X_train, y_train, X_predict, selected_rows, selected_cols
 
@@ -97,15 +93,15 @@ class ImputeMultiVariate:
 
     def __call__(self, X, subset_rows=None, subset_cols=None):
         """
-        Méthode principale pour effectuer l'imputation des valeurs manquantes dans un tableau multidimensionnel.
+        Main method to perform missing value imputation in a multidimensional array.
 
         Args:
-            X (numpy.ndarray): Le tableau d'entrée avec des valeurs manquantes.
-            subset_rows (int, list, numpy.ndarray, tuple, None): Les indices des lignes à considérer pour l'imputation. Si None, toutes les lignes sont considérées. (default: None)
-            subset_cols (int, list, numpy.ndarray, tuple, None): Les indices des colonnes à considérer pour l'imputation. Si None, toutes les colonnes sont considérées. (default: None)
+            X (numpy.ndarray): The input array with missing values.
+            subset_rows (int, list, numpy.ndarray, tuple, None): The row indices to consider for imputation. If None, all rows are considered. (default: None)
+            subset_cols (int, list, numpy.ndarray, tuple, None): The column indices to consider for imputation. If None, all columns are considered. (default: None)
 
         Returns:
-            numpy.ndarray: Le tableau avec les valeurs manquantes imputées.
+            numpy.ndarray: The array with missing values imputed.
         """
         check_params(X, types=np.ndarray)
         subset_rows = self._process_subset(X=X, subset=subset_rows, axis=0)

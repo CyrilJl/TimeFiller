@@ -8,23 +8,23 @@ from ._multivariate_imputer import ImputeMultiVariate
 
 
 class TimeSeriesImputer:
-    """Classe pour l'imputation de séries temporelles.
+    """Class for time series imputation.
 
     Args:
-        estimator (object, optional): Estimation utilisée pour l'imputation.
-        preprocessing (callable, optional): Prétraitement des données.
-        ar_lags (int, list, numpy.ndarray or tuple, optional): Retards auto-régressifs à considérer.
-        multivariate_lags (int or None, optional): Retards multivariés à considérer.
-        na_frac_max (float, optional): Fraction maximale de valeurs manquantes autorisées.
-        min_samples_train (int, optional): Nombre minimum d'échantillons pour l'apprentissage.
-        weighting_func (callable, optional): Fonction de pondération pour l'imputation.
-        optimask_n_tries (int, optional): Nombre d'essais pour l'optimisation.
-        verbose (bool, optional): Afficher les détails du processus.
-        random_state (int or None, optional): État aléatoire pour la reproductibilité.
+        estimator (object, optional): Estimator used for imputation.
+        preprocessing (callable, optional): Data preprocessing.
+        ar_lags (int, list, numpy.ndarray, or tuple, optional): Autoregressive lags to consider.
+        multivariate_lags (int or None, optional): Multivariate lags to consider.
+        na_frac_max (float, optional): Maximum fraction of missing values allowed.
+        min_samples_train (int, optional): Minimum number of samples for training.
+        weighting_func (callable, optional): Weighting function for imputation.
+        optimask_n_tries (int, optional): Number of attempts for optimization.
+        verbose (bool, optional): Display process details.
+        random_state (int or None, optional): Random state for reproducibility.
     """
 
     def __init__(self, estimator=None, preprocessing=None, ar_lags=None, multivariate_lags=None, na_frac_max=0.33,
-                 min_samples_train=50, weighting_func=None, optimask_n_tries=10, verbose=False, random_state=None):
+                 min_samples_train=50, weighting_func=None, optimask_n_tries=1, verbose=False, random_state=None):
 
         self.imputer = ImputeMultiVariate(estimator=estimator, preprocessing=preprocessing,
                                           na_frac_max=na_frac_max, min_samples_train=min_samples_train,
@@ -61,6 +61,7 @@ class TimeSeriesImputer:
 
     @staticmethod
     def _compute_features_selection_data(X):
+        # TODO: untractable when many features, to change
         corr = X.fillna(X.mean()).corr()
         x = (~X.isnull()).astype(float).values
         common_samples = (x.T@x)/len(x)
@@ -100,7 +101,7 @@ class TimeSeriesImputer:
                 return []
         if isinstance(subset_cols, (list, tuple, pd.core.indexes.base.Index)):
             return [columns.index(_) for _ in subset_cols if _ in columns]
-        raise TypeError()
+        raise TypeError(f"subset_cols should be of type str, list, tuple, or pandas Index. Received type {type(subset_cols)} instead.")
 
     @staticmethod
     def _process_subset_rows(X, before, after):
@@ -123,19 +124,17 @@ class TimeSeriesImputer:
         return pd.Series(x_col_imputed, name=col, index=x.index)
 
     def __call__(self, X, subset_cols=None, before=None, after=None, n_nearest_features=None) -> pd.DataFrame:
-        """Méthode d'appel pour l'imputation.
+        """Call method for imputation.
 
         Args:
-            X (DataFrame): Données à imputer.
-            subset_cols (str, list, tuple or pandas.core.indexes.base.Index, optional): Colonnes à imputer. Par défaut, toutes les colonnes seront imputées.
-            before (str or pd.Timestamp or None, optional): Date avant laquelle les données sont imputées. Par défaut, aucune limite temporelle inférieure n'est définie.
-            after (str or pd.Timestamp or None, optional): Date après laquelle les données sont imputées. Par défaut, aucune limite temporelle supérieure n'est définie.
-            n_nearest_features (int, optional): Nombre de caractéristiques les plus proches à considérer. Une heuristique est utilisée : les caractéristiques
-                utilisées sont sélectionnées de manière aléatoire, en fonction de leurs corrélations avec la caractéristique à imputer, ainsi que du nombre
-                d'observations temporelles communes avec la caractéristique à imputer.
+            X (DataFrame): Data to be imputed.
+            subset_cols (str, list, tuple, or pandas.core.indexes.base.Index, optional): Columns to be imputed. By default, all columns will be imputed.
+            before (str or pd.Timestamp or None, optional): Date before which the data is imputed. By default, no lower temporal limit is set.
+            after (str or pd.Timestamp or None, optional): Date after which the data is imputed. By default, no upper temporal limit is set.
+            n_nearest_features (int, optional): Number of nearest features to consider. A heuristic is used: the features are selected randomly, based on their correlations with the feature to be imputed, as well as the number of common temporal observations with the feature to be imputed.
 
         Returns:
-            DataFrame or tuple: Données imputées.
+            DataFrame or tuple: Imputed data.
         """
 
         rng = np.random.default_rng(self.random_state)
