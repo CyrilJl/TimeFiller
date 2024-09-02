@@ -60,8 +60,7 @@ The `TimeSeriesImputer` class is the core component of the `timefiller` package.
 - **`ar_lags`**: (int, list, numpy.ndarray, or tuple, optional)  
   Defines the autoregressive lags to consider in imputation:
   - Integer: Number of lags to include.
-  - List or numpy array: Specific lags to use.
-  - Tuple: Range of lags.
+  - Iterable of ints: Specific lags to use.
 
 - **`multivariate_lags`**: (int or None, optional)  
   Number of multivariate lags to consider, useful when dealing with multiple correlated time series.
