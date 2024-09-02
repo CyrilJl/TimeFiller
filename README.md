@@ -3,10 +3,9 @@ The `timefiller` Python package offers a robust solution for imputing missing da
 
 ## Overview
 
-`timefiller` is currently in development, aiming to provide advanced imputation and forecasting capabilities for time series data, particularly when multiple correlated series are involved. The package is built to accommodate missing data in a variety of formats and configurations, making it a versatile tool for data scientists and analysts working with time series data.
+`timefiller` is currently in development, aiming to provide advanced imputation and forecasting capabilities for time series data, particularly when multiple correlated series are involved. The package is built to accommodate missing data in a variety of formats and configurations. `timefiller` also provides forecasting capabilities when future covariates are available.
 
 It will be uploaded to PyPI soon, and details about the algorithm will be presented.
-
 
 ### Usage Example
 
