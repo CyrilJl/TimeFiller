@@ -7,6 +7,26 @@ The `timefiller` Python package offers a robust solution for imputing missing da
 
 It will be uploaded to PyPI soon, and details about the algorithm will be presented.
 
+
+### Usage Example
+
+Below is an example of how to use `timefiller` for imputing missing values in a time series dataset:
+
+```python
+from timefiller import TimeSeriesImputer
+
+# Assuming df is your DataFrame with time series data that may contain missing values
+df = ...
+
+# Initialize the TimeSeriesImputer with specified parameters
+tsi = TimeSeriesImputer(ar_lags=6)
+
+# Perform the imputation
+df_imputed = tsi(df, n_nearest_features=50)
+
+# df_imputed now contains the DataFrame with imputed values
+```
+
 ### Key Features
 
 1. **Time Series Imputation**: 
@@ -27,25 +47,6 @@ It will be uploaded to PyPI soon, and details about the algorithm will be presen
 ### Performance Considerations
 
 Current versions of `timefiller` might exhibit slower performance on large datasets due to the computational complexity of imputation methods. Efforts are underway to enhance both performance and scalability, making it suitable for bigger datasets.
-
-### Usage Example
-
-Below is an example of how to use `timefiller` for imputing missing values in a time series dataset:
-
-```python
-from timefiller import TimeSeriesImputer
-
-# Assuming df is your DataFrame with time series data that may contain missing values
-df = ...
-
-# Initialize the TimeSeriesImputer with specified parameters
-tsi = TimeSeriesImputer(ar_lags=6)
-
-# Perform the imputation
-df_imputed = tsi(df, n_nearest_features=50)
-
-# df_imputed now contains the DataFrame with imputed values
-```
 
 ### TimeSeriesImputer Class Parameters
 
