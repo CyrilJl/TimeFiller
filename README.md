@@ -93,13 +93,14 @@ Here’s an example demonstrating the selective imputation capabilities:
 
 ```python
 from timefiller import TimeSeriesImputer
+from sklearn.linear_model import LinearRegression
 
 # Example DataFrame with time series data
 df = ...
 
 # Configure TimeSeriesImputer with custom parameters
 tsi = TimeSeriesImputer(
-    estimator=None,
+    estimator=LinearRegression(fit_intercept=False),
     preprocessing=None,
     ar_lags=6,
     multivariate_lags=None,
