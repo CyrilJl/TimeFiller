@@ -40,8 +40,8 @@ df_imputed = tsi(df, n_nearest_features=50)
 
 ### Dependencies
 
-- **scikit-learn**: Used extensively for the `estimator` parameter, enabling compatibility with a wide array of machine learning models.
-- **OptiMask**: Utilized for optimizing the imputation mask, ensuring efficient handling of missing data patterns.
+- [scikit-learn](https://scikit-learn.org/stable/index.html): Used extensively for the `estimator` parameter, enabling compatibility with a wide array of machine learning models.
+- [optimask](https://optimask.readthedocs.io/en/latest/index.html): Utilized for optimizing the imputation mask, ensuring efficient handling of missing data patterns.
 
 ### Performance Considerations
 
