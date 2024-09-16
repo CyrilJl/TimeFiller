@@ -1,8 +1,6 @@
-<img src="https://raw.githubusercontent.com/CyrilJl/timefiller/main/_static/logo_timefiller.svg" alt="Logo BatchStats" width="50" height="50">
+# <img src="https://raw.githubusercontent.com/CyrilJl/timefiller/main/_static/logo_timefiller.svg" alt="Logo BatchStats" width="200" height="200" align="right"> timefiller
 
-# timefiller
-
-The `timefiller` Python package offers a robust solution for imputing missing data in time series, utilizing both statistical and machine learning methods. Designed for flexibility and customization, it can handle various types of missing data patterns across multiple correlated time series.
+The `timefiller` Python package offers a robust solution for imputing missing data in time series. Designed for flexibility and customization, it can handle various types of missing data patterns across multiple correlated time series.
 
 ## Overview
 
