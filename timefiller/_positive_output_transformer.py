@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
 import numpy as np
 from sklearn.base import TransformerMixin
 
@@ -8,22 +7,18 @@ __all__ = ['PositiveOutput']
 
 
 class PositiveOutput(TransformerMixin):
+    """
+    Parameters:
+    - q (float, optional): The quantile used as a threshold for expansion. 
+                            Default is q=10, which means the 10th percentile is used as the threshold.
+    - v (float, optional): Fixed value used as a threshold for negative expansion.
+                            If `v` is specified, this threshold will be used for all features.
+                            Default is v=None, which means the threshold is automatically calculated from the data.
+    """
+
     def __init__(self, q=10, v=None):
-        """
-        Initialise un objet PositiveOutput.
-
-        Parameters:
-        - q (float, optional): Le quantile utilisé comme seuil pour l'expansion. 
-                              Par défaut, q=10, ce qui signifie que le 10e percentile est utilisé comme seuil.
-        - v (float, optional): Valeur fixe utilisée comme seuil pour l'expansion négative.
-                              Si `v` est spécifié, ce seuil sera utilisé pour toutes les caractéristiques.
-                              Par défaut, v=None, ce qui signifie que le seuil est calculé automatiquement à partir des données.
-
-        Raises:
-        - ValueError: Si les deux arguments `q` et `v` sont `None`.
-        """
         if q is None and v is None:
-            raise ValueError("Au moins l'un des arguments 'q' ou 'v' doit être différent de None.")
+            raise ValueError("At least one of the arguments 'q' or 'v' must be different from None.")
 
         self.q = q
         self.v = v
@@ -31,17 +26,17 @@ class PositiveOutput(TransformerMixin):
 
     def fit(self, X, y=None):
         """
-        Calcule et enregistre les seuils nécessaires pour l'expansion négative.
+        Calculate and store the thresholds necessary for negative expansion.
 
         Parameters:
-        - X (array-like): Les données d'entraînement.
-        - y (array-like, optional): Les étiquettes d'entraînement. Non utilisé ici.
+        - X (array-like): The training data.
+        - y (array-like, optional): The training labels. Not used here.
 
         Returns:
-        - self: L'objet PositiveOutput ajusté.
+        - self: The fitted PositiveOutput object.
         """
         if np.nanmin(X) < 0:
-            raise ValueError("Les données ne doivent pas contenir de valeurs négatives.")
+            raise ValueError("The data must not contain negative values.")
 
         if self.v is None:
             self.thresholds_ = np.nanpercentile(X, q=self.q, axis=0)
@@ -51,14 +46,14 @@ class PositiveOutput(TransformerMixin):
 
     def transform(self, X, y=None):
         """
-        Applique l'expansion négative sur les données.
+        Apply negative expansion on the data.
 
         Parameters:
-        - X (array-like): Les données à transformer.
-        - y (array-like, optional): Les étiquettes. Non utilisé ici.
+        - X (array-like): The data to transform.
+        - y (array-like, optional): The labels. Not used here.
 
         Returns:
-        - array-like: Les données transformées avec l'expansion négative.
+        - array-like: The transformed data with negative expansion.
         """
         X = np.asarray(X)
         mask = X < self.thresholds_
@@ -66,14 +61,14 @@ class PositiveOutput(TransformerMixin):
 
     def inverse_transform(self, X, y=None):
         """
-        Inverse l'expansion négative sur les données transformées.
+        Reverse the negative expansion on the transformed data.
 
         Parameters:
-        - X (array-like): Les données transformées.
-        - y (array-like, optional): Les étiquettes. Non utilisé ici.
+        - X (array-like): The transformed data.
+        - y (array-like, optional): The labels. Not used here.
 
         Returns:
-        - array-like: Les données inversées après l'expansion négative.
+        - array-like: The inverted data after negative expansion.
         """
         X = np.asarray(X)
         mask = X < self.thresholds_
