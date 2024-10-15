@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
+from sklearn.feature_selection import r_regression
 from tqdm.auto import tqdm
 
 from ._misc import check_params
@@ -52,21 +53,17 @@ class TimeSeriesImputer:
             return sorted(list(set(ar_lags)))
 
     @staticmethod
-    def _sample_features(corr, common_samples, col, n_nearest_features, rng):
-        s1 = corr[col].drop(col)
-        s2 = common_samples[col].drop(col)
-        p = np.sqrt(abs(s1.values) * s2.values)
+    def _sample_features(data, col, n_nearest_features, rng):
+        x = data.fillna(data.mean())
+        # computes pearson correlation between col and others series
+        s1 = r_regression(X=x.drop(columns=col), y=x[col])
+        # computes the mean number of timestamps containing common valid data between col and others series
+        s2 = ((~data[col].isnull()).astype(float).values@(~data.drop(columns=col).isnull()).astype(float).values)/len(data)
+        # features are sampled according those computed features
+        p = np.sqrt(abs(s1) * s2)
         size = min(n_nearest_features, len(s1), len(p[p > 0]))
-        return list(rng.choice(a=s1.index, size=size, p=p/p.sum(), replace=False))
-
-    @staticmethod
-    def _compute_features_selection_data(X):
-        # TODO: untractable when many features, to change
-        corr = X.fillna(X.mean()).corr()
-        x = (~X.isnull()).astype(float).values
-        common_samples = (x.T@x)/len(x)
-        common_samples = pd.DataFrame(common_samples, index=X.columns, columns=X.columns)
-        return corr, common_samples
+        cols_to_sample = list(data.drop(columns=col).columns)
+        return list(rng.choice(a=cols_to_sample, size=size, p=p/p.sum(), replace=False))
 
     @staticmethod
     def _best_lag(s1, s2, max_lags):
@@ -131,7 +128,8 @@ class TimeSeriesImputer:
             subset_cols (str, list, tuple, or pandas.core.indexes.base.Index, optional): Columns to be imputed. By default, all columns will be imputed.
             before (str or pd.Timestamp or None, optional): Date before which the data is imputed. By default, no lower temporal limit is set.
             after (str or pd.Timestamp or None, optional): Date after which the data is imputed. By default, no upper temporal limit is set.
-            n_nearest_features (int, optional): Number of nearest features to consider. A heuristic is used: the features are selected randomly, based on their correlations with the feature to be imputed, as well as the number of common temporal observations with the feature to be imputed.
+            n_nearest_features (int, optional): Number of nearest features to consider. A heuristic is used: the features are selected randomly, based on
+            their correlations with the feature to be imputed, as well as the number of common temporal observations with the feature to be imputed.
 
         Returns:
             DataFrame or tuple: Imputed data.
@@ -146,16 +144,13 @@ class TimeSeriesImputer:
         X_ = X_[X_.columns[X_.std() > 0]].copy()
         columns = list(X_.columns)
 
-        if isinstance(n_nearest_features, int):
-            corr, common_samples = self._compute_features_selection_data(X_)
-
         ret = [pd.Series(index=X.index)]
         subset_rows = self._process_subset_rows(X_, before, after)
         subset_cols = self._process_subset_cols(X_, subset_cols)
         for index_col in tqdm(subset_cols, disable=(not self.verbose)):
             col = columns[index_col]
             if isinstance(n_nearest_features, int):
-                cols_in = [col] + self._sample_features(corr, common_samples, col, n_nearest_features, rng)
+                cols_in = [col] + self._sample_features(X_, col, n_nearest_features, rng)
             else:
                 cols_in = list(X_.columns)
             ret.append(self._impute_col(x=X_[cols_in], col=col, subset_rows=subset_rows))
