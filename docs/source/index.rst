@@ -5,6 +5,7 @@
    :maxdepth: 1   
 
    insights
+   api_reference
 
 timefiller
 ==========
@@ -41,4 +42,6 @@ Check out :ref:`insights` for details on available options to customize your imp
 Algorithmic Approach
 --------------------
 
-``timefiller`` relies heavily on `scikit-learn <https://scikit-learn.org/stable/>`_ for the learning process and uses `optimask <https://optimask.readthedocs.io/en/latest/index.html>`_ to create NaN-free train and predict matrices for the estimator. This method offers more flexibility than Expectation-Maximization and is lighter than deep learning-based techniques.
+``timefiller`` relies heavily on `scikit-learn <https://scikit-learn.org/stable/>`_ for the learning process and uses
+`optimask <https://optimask.readthedocs.io/en/latest/index.html>`_ to create NaN-free train and predict matrices for the
+estimator.

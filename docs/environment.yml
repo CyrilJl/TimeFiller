@@ -1,0 +1,12 @@
+name: base
+channels:
+  - conda-forge
+dependencies:
+  - docutils
+  - pydata-sphinx-theme
+  - sphinx-copybutton
+  - pandoc
+  - numpy
+  - pandas
+  - statsmodels
+  - scikit-learn

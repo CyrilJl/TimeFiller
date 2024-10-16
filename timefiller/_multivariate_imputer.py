@@ -7,7 +7,7 @@ from ._misc import InvalidEstimatorError, InvalidSubsetError, check_params
 
 class ImputeMultiVariate:
     """
-    The `ImputeMultiVariate` class has been developed to address the problem of imputing missing values in multivariate data.
+    The ``ImputeMultiVariate`` class has been developed to address the problem of imputing missing values in multivariate data.
     It relies on regression techniques to estimate missing values using information available in other columns.
     This class offers great flexibility by allowing users to specify a custom regression estimator, while also providing
     a default option to use linear regression from the scikit-learn library. Additionally, it takes into account important parameters
