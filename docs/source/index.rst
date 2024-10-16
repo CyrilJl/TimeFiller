@@ -1,5 +1,8 @@
 .. _index:
 
+.. image:: https://img.shields.io/pypi/v/timefiller
+   :alt: PyPI - Version
+
 .. toctree::
    :hidden:
    :maxdepth: 1   
@@ -36,6 +39,18 @@ The simplest usage example:
    df = load_your_dataset()
    tsi = TimeSeriesImputer()
    df_imputed = tsi(df)
+
+Advanced Usage
+--------------
+
+.. code-block:: python
+
+   from timefiller import TimeSeriesImputer, PositiveOutput
+   from sklearn.linear_model import LassoCV
+
+   df = load_your_dataset()
+   tsi = TimeSeriesImputer(estimator=LassoCV(), ar_lags=(1, 2, 3, 6, 24), multivariate_lags=6, preprocessing=PositiveOutput())
+   df_imputed = tsi(df, subset_cols=['col_1', 'col_17'], after='2024-06-14', n_nearest_features=35)
 
 Check out :ref:`insights` for details on available options to customize your imputation.
 
