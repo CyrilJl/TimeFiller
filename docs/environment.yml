@@ -1,7 +1,10 @@
-name: base
+name: my_env
 channels:
   - conda-forge
 dependencies:
+  - python=3.12
+  - sphinx 
+  - setuptools
   - docutils
   - pydata-sphinx-theme
   - sphinx-copybutton
