@@ -13,3 +13,4 @@ dependencies:
   - pandas
   - statsmodels
   - scikit-learn
+  - optimask
