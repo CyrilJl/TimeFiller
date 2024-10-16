@@ -9,7 +9,7 @@ dependencies:
   - pydata-sphinx-theme
   - sphinx-copybutton
   - pandoc
-  - numpy
+  - numpy=2.0.2
   - pandas
   - statsmodels
   - scikit-learn
