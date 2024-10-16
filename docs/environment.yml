@@ -14,3 +14,4 @@ dependencies:
   - statsmodels
   - scikit-learn
   - optimask
+  - tqdm
