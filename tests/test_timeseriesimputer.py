@@ -1,10 +1,9 @@
 import os
 
-os.environ['NUMBA_CACHE_DIR'] = '.'
-
 import pytest
 from timefiller import TimeSeriesImputer
 from timefiller.utils import add_mar_nan, generate_random_time_series
+
 
 @pytest.fixture
 def generate_data():
