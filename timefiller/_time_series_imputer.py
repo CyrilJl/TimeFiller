@@ -46,11 +46,11 @@ class TimeSeriesImputer:
         if ar_lags is None:
             return None
         if isinstance(ar_lags, int):
-            ar_lags = list(range(-abs(ar_lags)-1, -1)) + list(range(1, abs(ar_lags)+1))
-            return sorted(ar_lags)
+            ar_lags = list(range(-abs(ar_lags), 0)) + list(range(1, abs(ar_lags)+1))
+            return tuple(sorted(ar_lags))
         if isinstance(ar_lags, (tuple, list, np.ndarray)):
             ar_lags = [-k for k in ar_lags if k != 0] + [k for k in ar_lags if k != 0]
-            return sorted(list(set(ar_lags)))
+            return tuple(sorted(set(ar_lags)))
 
     @staticmethod
     def _sample_features(data, col, n_nearest_features, rng):
