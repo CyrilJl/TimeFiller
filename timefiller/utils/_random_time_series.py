@@ -43,3 +43,14 @@ def generate_random_time_series(n, start, freq, periods, cov=None, mean=None, ke
     time_index = pd.date_range(start=start, periods=periods, freq=freq)
     df = pd.DataFrame(X_transformed, index=time_index, columns=[f"serie {i+1}" for i in range(n)])
     return df
+
+
+def add_mar_nan(df, ratio) -> pd.DataFrame:
+    """Create Missing at Random Values"""
+    df_copy = df.copy()
+    total_values = df_copy.size
+    n_nan = int(total_values * ratio)
+    nan_indices = np.random.choice(total_values, n_nan, replace=False)
+    nan_indices = np.unravel_index(nan_indices, df_copy.shape)
+    df_copy.values[nan_indices] = np.nan
+    return df_copy
