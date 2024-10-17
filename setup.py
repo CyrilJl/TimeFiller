@@ -5,13 +5,13 @@ with open("README.md", "r") as fh:
 
 setup(
     name='timefiller',
-    version='0.1.0',
+    version='0.1.1',
     packages=find_packages(),
     install_requires=['numpy',
                       'optimask',
                       'pandas',
-                      'statsmodels',
-                      'scikit-learn', 
+                      'scikit-learn',
+                      'statsmodels', 
                       'tqdm'],
     python_requires='>=3.8',
     author='Cyril Joly',
