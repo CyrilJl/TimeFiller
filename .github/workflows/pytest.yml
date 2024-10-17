@@ -7,6 +7,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    env:
+      NUMBA_CACHE_DIR: /tmp
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
