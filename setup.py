@@ -17,6 +17,7 @@ setup(
     author='Cyril Joly',
     description='A package for imputing missing data in time series',
     long_description=long_description,
+    long_description_content_type='text/markdown',
     classifiers=['License :: OSI Approved :: MIT License'],
     url="https://github.com/CyrilJl/TimeFiller"
 )
