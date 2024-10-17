@@ -1,6 +1,6 @@
 import os
 
-os.environ['NUMBA_CACHE_DIR'] = '/tmp'
+os.environ['NUMBA_CACHE_DIR'] = './.tmp'
 
 import pytest
 from timefiller import TimeSeriesImputer
