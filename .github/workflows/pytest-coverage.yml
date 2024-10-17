@@ -27,7 +27,7 @@ jobs:
 
     - name: Run Pytest with Coverage
       run: |
-        pytest --cov=your_package_name --cov-report=html --cov-report=term-missing tests
+        pytest --cov=timefiller --cov-report=html --cov-report=term-missing tests
 
     - name: Upload coverage report
       uses: actions/upload-artifact@v3
