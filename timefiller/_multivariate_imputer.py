@@ -86,7 +86,7 @@ class ImputeMultiVariate:
         for col_to_impute in imputable_cols:
             index_predict, columns = self._prepare_data(mask_nan=mask_nan, col_to_impute=col_to_impute, subset_rows=subset_rows)
             for cols, index in zip(columns, index_predict):
-                X_train, y_train, X_predict, selected_rows, selected_cols = self._prepare_train_and_pred_data(X, mask_nan, cols, col_to_impute, index)
+                X_train, y_train, X_predict, selected_rows, _ = self._prepare_train_and_pred_data(X, mask_nan, cols, col_to_impute, index)
                 if len(X_train) >= self.min_samples_train:
                     ret[index, col_to_impute] = self._perform_imputation(X_train, y_train, X_predict, selected_rows)
         return ret
