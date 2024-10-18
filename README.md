@@ -1,4 +1,5 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/timefiller)](https://pypi.org/project/timefiller/)
+[![Conda Version](https://img.shields.io/conda/vn/conda-forge/timefiller.svg)](https://anaconda.org/conda-forge/timefiller)
 [![Documentation Status](https://readthedocs.org/projects/timefiller/badge/?version=latest)](https://timefiller.readthedocs.io/en/latest/?badge=latest)
 [![Unit tests](https://github.com/CyrilJl/timefiller/actions/workflows/pytest.yml/badge.svg)](https://github.com/CyrilJl/timefiller/actions/workflows/pytest.yml)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/51d0dd39565a410985a6836e7d6bcd0b)](https://app.codacy.com/gh/CyrilJl/TimeFiller/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
