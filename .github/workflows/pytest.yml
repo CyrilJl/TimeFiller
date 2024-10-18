@@ -21,11 +21,7 @@ jobs:
 
     - name: Install dependencies with conda
       run: |
-        mamba install numpy==2.0.2 requests pytables -c conda-forge
-
-    - name: Install remaining dependencies with pip
-      run: |
-        pip install pytest setuptools
+        conda install -y pytest setuptools numpy==2.0.2 requests pytables -c conda-forge
 
     - name: Install timefiller
       run: |
