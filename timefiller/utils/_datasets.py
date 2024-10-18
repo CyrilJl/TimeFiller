@@ -3,6 +3,7 @@ from os.path import exists, expanduser, join
 
 import pandas as pd
 import requests
+import tempfile
 
 
 def fetch_pems_bay(data_home=None) -> pd.DataFrame:
@@ -24,12 +25,11 @@ def fetch_pems_bay(data_home=None) -> pd.DataFrame:
         PeMS-Bay dataset: https://doi.org/10.5281/zenodo.4263971
     """
     
-    # Set default data directory if not provided
     if data_home is None:
         data_home = expanduser("~/timefiller_data")
 
     # Define the filename and path to the dataset
-    filename = 'pems-bay.h5'
+    filename = 'pems-bay.csv'
     file_path = join(data_home, filename)
 
     # Ensure the directory exists, if not create it
@@ -40,8 +40,14 @@ def fetch_pems_bay(data_home=None) -> pd.DataFrame:
     if not exists(file_path):
         url = 'https://zenodo.org/records/4263971/files/pems-bay.h5'
         response = requests.get(url, timeout=60)
-        with open(file_path, 'wb') as f:
-            f.write(response.content)
+        
+        # Save the content to a temporary file
+        with tempfile.NamedTemporaryFile(suffix='.h5') as tmp_file:
+            tmp_file.write(response.content)
+            tmp_file_path = tmp_file.name        
+            # Read the HDF file using pandas
+            df = pd.read_hdf(tmp_file_path).rename_axis(index='time')
+            df.to_csv(file_path)            
 
     # Load the dataset from the local file
-    return pd.read_hdf(file_path)
+    return pd.read_csv(file_path, index_col='time', parse_dates=['time']).asfreq('h')
