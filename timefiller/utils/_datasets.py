@@ -1,4 +1,3 @@
-from io import BytesIO
 from os import makedirs
 from os.path import exists, expanduser, join
 
@@ -40,7 +39,7 @@ def fetch_pems_bay(data_home=None) -> pd.DataFrame:
     # Download the dataset if it doesn't already exist locally
     if not exists(file_path):
         url = 'https://zenodo.org/records/4263971/files/pems-bay.h5'
-        response = requests.get(url)
+        response = requests.get(url, timeout=60)
         with open(file_path, 'wb') as f:
             f.write(response.content)
 
