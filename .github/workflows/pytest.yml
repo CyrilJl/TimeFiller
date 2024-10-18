@@ -11,17 +11,15 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Set up Miniconda
-      uses: conda-incubator/setup-miniconda@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
       with:
         python-version: '3.12'
-        auto-update-conda: true
-        activate-environment: test-env
-        use-mamba: true
 
-    - name: Install dependencies with conda
+    - name: Install dependencies
       run: |
-        conda install -y pytest setuptools numpy==2.0.2 requests pytables -c conda-forge
+        python -m pip install --upgrade pip
+        pip install pytest setuptools numpy==2.0.2 requests
 
     - name: Install timefiller
       run: |
