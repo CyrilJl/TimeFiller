@@ -10,8 +10,17 @@
 
 ## Installation
 
+You can get ``timefiller`` from PyPi:
 ```bash
 pip install timefiller
+```
+But also from conda-forge:
+```bash
+conda install -c conda-forge timefiller
+```
+
+```bash
+mamba install timefiller
 ```
 
 ## Why this package?
