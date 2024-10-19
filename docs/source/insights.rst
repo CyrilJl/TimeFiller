@@ -38,7 +38,7 @@ pipeline passed to the ``estimator``, but it would be applied repeatedly, and on
     tsi = TimeSeriesImputer(preprocessing=PowerTransformer(method='box-cox'))
     df_imputed = tsi(df)
 
-When imputing a set of positive time series, ``timefiller`` provides a useful tool, ``PositiveOutput```:
+When imputing a set of positive time series, ``timefiller`` provides a useful tool, ``PositiveOutput``:
 
 .. code-block:: python
 
