@@ -60,7 +60,7 @@ Check out the [documentation](https://timefiller.readthedocs.io/en/latest/index.
 
 ## Real data example
 
-Let's evaluate how ``timefiller`` performs on a real-world dataset, the PeMS-Bay traffic data. A sensor ID is selected for the experiment, and a contiguous block of missing values is introduced. To increase the complexity, additional Missing At Random (MAR) data is simulated, representing 1% of the entire dataset:
+Let's evaluate how ``timefiller`` performs on a real-world dataset, the [PeMS-Bay traffic data](https://zenodo.org/records/5724362). A sensor ID is selected for the experiment, and a contiguous block of missing values is introduced. To increase the complexity, additional Missing At Random (MAR) data is simulated, representing 1% of the entire dataset:
 
 ```python
 import matplotlib.pyplot as plt
