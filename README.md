@@ -52,6 +52,53 @@ df_imputed = tsi(df, subset_cols=['col_1', 'col_17'], after='2024-06-14', n_near
 
 Check out the [documentation](https://timefiller.readthedocs.io/en/latest/index.html) for details on available options to customize your imputation.
 
+## Real data example
+
+Let's evaluate how ``timefiller`` performs on a real-world dataset, the PeMS-Bay traffic data. A sensor ID is selected for the experiment, and a contiguous block of missing values is introduced. To increase the complexity, additional Missing At Random (MAR) data is simulated, representing 1% of the entire dataset:
+
+```python
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from timefiller import TimeSeriesImputer
+from timefiller.utils import add_mar_nan, fetch_pems_bay
+
+# Fetch the time series dataset (e.g., PeMS-Bay traffic data)
+df = fetch_pems_bay()
+dfm = df.copy()  # Create a copy to introduce missing values later
+
+# Randomly select one column (sensor ID) to introduce missing values
+k = np.random.randint(df.shape[1])
+col = df.columns[k]
+i, j = 20_000, 22_500  # Define a range in the dataset to set as NaN (missing values)
+dfm.iloc[i:j, k] = np.nan  # Introduce missing values in this range for the selected column
+
+# Add more missing values randomly across the dataset (1% of the data)
+dfm = add_mar_nan(dfm, ratio=0.01)
+
+# Initialize the TimeSeriesImputer with AR lags and multivariate lags
+tsi = TimeSeriesImputer(ar_lags=48, multivariate_lags=6)
+
+# Apply the imputation method on the modified dataframe
+df_imputed = tsi(dfm, subset_cols=col, n_nearest_features=75)
+
+# Plot the imputed data alongside the data with missing values
+df_imputed[col].rename('imputation').plot(figsize=(10, 3), lw=0.8, c='C0')
+dfm[col].rename('data to impute').plot(ax=plt.gca(), lw=0.8, c='C1')
+plt.title(f'sensor_id {col}')
+plt.legend()
+plt.show()
+
+# Plot the imputed data vs the original complete data for comparison
+df_imputed[col].rename('imputation').plot(figsize=(10, 3), lw=0.8, c='C0')
+df[col].rename('complete data').plot(ax=plt.gca(), lw=0.8, c='C2')
+plt.xlim(dfm.index[i], dfm.index[j])  # Focus on the region where data was missing
+plt.legend()
+plt.show()
+```
+
+<img src="https://raw.githubusercontent.com/CyrilJl/timefiller/main/_static/result_imputation.png" width="500">
+
 ## Algorithmic Approach
 
 `timefiller` relies heavily on [scikit-learn](https://scikit-learn.org/stable/) for the learning process and uses [optimask](https://optimask.readthedocs.io/en/latest/index.html) to create NaN-free train and predict matrices for the estimator.
