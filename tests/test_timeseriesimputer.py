@@ -1,14 +1,14 @@
 import pytest
 from sklearn.linear_model import LassoCV
 from timefiller import TimeSeriesImputer
-from timefiller.utils import add_mar_nan, generate_random_time_series
+from timefiller.utils import add_mar_nan, fetch_pems_bay
 
 
 @pytest.fixture
 def generate_data():
     """Fixture to generate random time series data with missing values."""
-    df = generate_random_time_series(n=35, start='2023-01-01', freq='h', periods=24*365)
-    df_with_nan = add_mar_nan(df, ratio=0.02)
+    df = fetch_pems_bay().sample(n=35, axis=1)
+    df_with_nan = add_mar_nan(df, ratio=0.01)
     return df_with_nan
 
 def test_impute_1(generate_data):
