@@ -26,3 +26,4 @@ html_static_path = ['_static']
 html_sidebars = {"**": []}
 html_logo = "_static/logo_timefiller.svg"
 html_show_sphinx = False
+html_context = {"default_mode": "light"}
