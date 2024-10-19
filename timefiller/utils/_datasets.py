@@ -50,4 +50,4 @@ def fetch_pems_bay(data_home=None) -> pd.DataFrame:
         df.to_csv(file_path)            
 
     # Load the dataset from the local file
-    return pd.read_csv(file_path, index_col='time', parse_dates=['time']).asfreq('h')
+    return pd.read_csv(file_path, index_col='time', parse_dates=['time']).asfreq('5min')
