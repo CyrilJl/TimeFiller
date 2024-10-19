@@ -28,10 +28,10 @@ def test_impute_2(generate_data):
     tsi = TimeSeriesImputer(ar_lags=(1, 2, 3, 6))
     
     # Define the cutoff date for imputation
-    cutoff_date = '2023-06-01'
+    after = '2017-05-01'
     
     # Perform imputation only after the cutoff date
-    df_imputed = tsi(df, after=cutoff_date)
+    df_imputed = tsi(df, after=after)
     
     # Check that there are no missing values after the cutoff date
     assert df_imputed.isnull().sum().sum() < df.isnull().sum().sum()
@@ -42,10 +42,10 @@ def test_impute_3(generate_data):
     tsi = TimeSeriesImputer(estimator=LassoCV(), ar_lags=(1, 2, 3, 6), multivariate_lags=12)
     
     # Define the cutoff date for imputation
-    cutoff_date = '2023-06-01'
+    after = '2017-05-01'
     
     # Perform imputation only after the cutoff date
-    df_imputed = tsi(df, after=cutoff_date, subset_cols='serie 5', n_nearest_features=15)
+    df_imputed = tsi(df, after=after, subset_cols='serie 5', n_nearest_features=15)
     
     # Check that there are no missing values after the cutoff date
     assert df_imputed.isnull().sum().sum() < df.isnull().sum().sum()
