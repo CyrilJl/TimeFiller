@@ -6,8 +6,8 @@
 .. image:: https://anaconda.org/conda-forge/timefiller/badges/version.svg
     :target: https://anaconda.org/conda-forge/timefiller
 
-timefiller
-==========
+timefiller documentation
+========================
 
 .. toctree::
    :hidden:
