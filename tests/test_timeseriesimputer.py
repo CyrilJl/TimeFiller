@@ -47,7 +47,7 @@ def test_impute_3(pems_data):
 
     # Define the cutoff date for imputation
     after = '2017-05-01'
-    subset_cols = pems_data.sample(n=3, axis=1)
+    subset_cols = pems_data.sample(n=3, axis=1).columns
 
     # Perform imputation only after the cutoff date
     df_imputed = tsi(df, after=after, subset_cols=subset_cols, n_nearest_features=15)
