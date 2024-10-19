@@ -103,7 +103,7 @@ plt.legend()
 plt.show()
 ```
 
-<img src="https://raw.githubusercontent.com/CyrilJl/timefiller/main/_static/result_imputation.png" width="500">
+<img src="https://raw.githubusercontent.com/CyrilJl/timefiller/main/_static/result_imputation.png" width="750">
 
 ## Algorithmic Approach
 
