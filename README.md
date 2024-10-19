@@ -36,18 +36,24 @@ from timefiller import TimeSeriesImputer
 
 df = load_your_dataset()
 tsi = TimeSeriesImputer()
-df_imputed = tsi(df)
+df_imputed = tsi(X=df)
 ```
 
 ## Advanced Usage
 
 ```python
 from sklearn.linear_model import LassoCV
-from timefiller import TimeSeriesImputer, PositiveOutput
+from timefiller import PositiveOutput, TimeSeriesImputer
 
 df = load_your_dataset()
-tsi = TimeSeriesImputer(estimator=LassoCV(), ar_lags=(1, 2, 3, 6, 24), multivariate_lags=6, preprocessing=PositiveOutput())
-df_imputed = tsi(df, subset_cols=['col_1', 'col_17'], after='2024-06-14', n_nearest_features=35)
+tsi = TimeSeriesImputer(estimator=LassoCV(),
+                        ar_lags=(1, 2, 3, 6, 24),
+                        multivariate_lags=6,
+                        preprocessing=PositiveOutput())
+df_imputed = tsi(X=df,
+                 subset_cols=['col_1', 'col_17'],
+                 after='2024-06-14',
+                 n_nearest_features=35)
 ```
 
 Check out the [documentation](https://timefiller.readthedocs.io/en/latest/index.html) for details on available options to customize your imputation.
