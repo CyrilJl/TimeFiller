@@ -42,12 +42,12 @@ def fetch_pems_bay(data_home=None) -> pd.DataFrame:
         response = requests.get(url, timeout=60)
         
         # Save the content to a temporary file
-        with tempfile.NamedTemporaryFile(suffix='.h5') as tmp_file:
+        with tempfile.NamedTemporaryFile(suffix='.h5', delete=False) as tmp_file:
             tmp_file.write(response.content)
             tmp_file_path = tmp_file.name        
             # Read the HDF file using pandas
-            df = pd.read_hdf(tmp_file_path).rename_axis(index='time')
-            df.to_csv(file_path)            
+        df = pd.read_hdf(tmp_file_path).rename_axis(index='time', columns='sensor_id')
+        df.to_csv(file_path)            
 
     # Load the dataset from the local file
     return pd.read_csv(file_path, index_col='time', parse_dates=['time']).asfreq('h')
