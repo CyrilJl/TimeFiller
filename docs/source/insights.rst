@@ -26,10 +26,13 @@ easily specified:
 
 ``preprocessing``
 ~~~~~~~~~~~~~~~~~
-A function for preprocessing the data before imputation, such as scaling or normalization. It accepts
+A function for preprocessing data before imputation, such as scaling or normalization. It accepts
 any scikit-learn transformer with ``fit_transform`` and ``inverse_transform`` methods, allowing for
-easy integration of standard preprocessing steps. You could integrate preprocessing directly into the
-pipeline passed to the ``estimator``, but it would be applied repeatedly, and only to submatrices of the dataset.
+easy integration of standard preprocessing steps. While preprocessing could be integrated directly
+into the pipeline passed to the ``estimator``, doing so would repeatedly apply the transformation
+only to submatrices of the dataset. In this approach, ``fit_transform`` is applied to the entire
+dataset before imputation, and ``inverse_transform`` is used afterward to revert the data to its
+original space.
 
 .. code-block:: python
 
