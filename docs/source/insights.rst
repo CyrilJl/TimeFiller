@@ -50,13 +50,7 @@ When imputing a set of positive time series, ``timefiller`` provides a useful to
     tsi = TimeSeriesImputer(ar_lags=24, preprocessing=PositiveOutput())
     df_imputed = tsi(df)
 
-While one can specify ``estimator=LinearRegression(positive=True, fit_intercept=False)`` to enforce
-positive imputed values, this approach may be less effective when utilizing autoregressive lags. This
-is because it restricts the model from assigning negative weights to lagged series, which could otherwise
-help create differential-like features. The ``PositiveOutput`` strategy, inspired by transformations like
-Box-Cox or Yeo-Johnson, expands values near zero into the negative domain before fitting the model and
-applies the inverse transformation after prediction. This acts as a softened ReLU, rather than working
-with the original data and forcing negative predictions to zero (hard ReLU).
+While specifying `estimator=LinearRegression(positive=True, fit_intercept=False)` can enforce positive imputed values, this approach may be less effective when using autoregressive lags. This is because it prevents the model from assigning negative weights to lagged series, which could otherwise help create differential-like features. The `PositiveOutput` strategy, inspired by transformations like Box-Cox or Yeo-Johnson, addresses this by expanding values near zero into the negative domain before fitting the model, and then applying the inverse transformation after prediction. This functions as a softened ReLU, rather than working with the original data and forcing negative predictions to zero (as in a hard ReLU). The threshold for "near-zero" values can be controlled by the user: `PositiveOutput(q=10)` sets the threshold at the 10th percentile of each time series, while `PositiveOutput(v=25.)` sets a fixed threshold of 25 for all time series. 
 
 ``ar_lags``
 ~~~~~~~~~~~
@@ -127,10 +121,11 @@ In some cases, imputation may only be needed for data within a certain time rang
     tsi = TimeSeriesImputer()
     df_imputed = tsi(df, subset_cols=['col1', 'col2'], after='2024-01-01', before='2024-01-31')
 
-``n_nearest_features``
-~~~~~~~~~~~~~~~~~~~~~~
+n_nearest_features
+~~~~~~~~~~~~~~~~~~
 To speed up the imputation process, you can perform variable selection before running the imputation, which is especially
-useful for datasets with a large number of covariates.
+useful for datasets with a large number of covariates. This method samples features based on their correlation with the
+feature being processed, as well as the number of common valid samples.
 
 .. code-block:: python
 
