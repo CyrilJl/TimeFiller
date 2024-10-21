@@ -124,12 +124,13 @@ class TimeSeriesImputer:
         """Call method for imputation.
 
         Args:
-            X (DataFrame): Data to be imputed.
-            subset_cols (str, list, tuple, or pandas.core.indexes.base.Index, optional): Columns to be imputed. By default, all columns will be imputed.
+            X (DataFrame): Data to be imputed. Constant features (i.e., features with zero standard deviation) will not be imputed nor used for the imputation of other series.
+            subset_cols (str, list, tuple, or pandas.core.indexes.base.Index, optional): Columns to be imputed. By default, all columns will be imputed, except constant features.
             before (str or pd.Timestamp or None, optional): Date before which the data is imputed. By default, no lower temporal limit is set.
             after (str or pd.Timestamp or None, optional): Date after which the data is imputed. By default, no upper temporal limit is set.
             n_nearest_features (int, optional): Number of nearest features to consider. A heuristic is used: the features are selected randomly, based on
             their correlations with the feature to be imputed, as well as the number of common temporal observations with the feature to be imputed.
+            Constant features are excluded from this selection.
 
         Returns:
             DataFrame or tuple: Imputed data.
