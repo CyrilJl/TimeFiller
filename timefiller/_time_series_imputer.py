@@ -4,6 +4,7 @@ import statsmodels.api as sm
 from sklearn.feature_selection import r_regression
 from tqdm.auto import tqdm
 
+from ._extreme_learning_machine import ExtremeLearningMachine
 from ._misc import check_params
 from ._multivariate_imputer import ImputeMultiVariate
 
@@ -26,7 +27,8 @@ class TimeSeriesImputer:
 
     def __init__(self, estimator=None, preprocessing=None, ar_lags=None, multivariate_lags=None, na_frac_max=0.33,
                  min_samples_train=50, weighting_func=None, optimask_n_tries=1, verbose=False, random_state=None):
-
+        if estimator is None:
+            estimator = ExtremeLearningMachine()
         self.imputer = ImputeMultiVariate(estimator=estimator, preprocessing=preprocessing,
                                           na_frac_max=na_frac_max, min_samples_train=min_samples_train,
                                           weighting_func=weighting_func, optimask_n_tries=optimask_n_tries,
