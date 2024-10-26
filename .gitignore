@@ -1,5 +1,5 @@
-# Datasets
-datasets/
+# VisualStudio
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
