@@ -135,7 +135,7 @@ class TimeSeriesImputer:
             Constant features are excluded from this selection.
 
         Returns:
-            DataFrame or tuple: Imputed data.
+            DataFrame: Imputed data.
         """
 
         rng = np.random.default_rng(self.random_state)

@@ -40,6 +40,26 @@ class ExtremeLearningMachine(BaseEstimator, RegressorMixin):
         self.random_state = random_state
 
     def fit(self, X, y, sample_weight=None):
+        """
+        Fits the Extreme Learning Machine model to the training data.
+
+        This method applies a random projection to the input features, followed by a
+        ReLU activation function, and then fits a linear regression model on the transformed
+        features.
+
+        Args:
+            X (array-like of shape (n_samples, n_features)): The input data.
+            y (array-like of shape (n_samples,)): The target values.
+            sample_weight (array-like of shape (n_samples,), optional): Individual
+                weights for each sample. If None, all samples are given equal weight.
+
+        Returns:
+            self: The fitted estimator.
+
+        Raises:
+            ValueError: If `X` and `y` have incompatible shapes or if the number of features
+                in `X` does not match the number of features expected by the model.
+        """
         X, y = check_X_y(X, y, accept_sparse=False, ensure_2d=True)
 
         self.n_features_in_ = X.shape[1]
@@ -63,6 +83,22 @@ class ExtremeLearningMachine(BaseEstimator, RegressorMixin):
         return self
 
     def predict(self, X):
+        """
+        Predicts target values for samples in `X`.
+
+        This method transforms the input data using the random projection and ReLU activation
+        learned during fitting, and then uses the linear regression model to make predictions.
+
+        Args:
+            X (array-like of shape (n_samples, n_features)): The input data for which predictions are to be made.
+
+        Returns:
+            y_pred (ndarray of shape (n_samples,)): The predicted values for each input sample.
+
+        Raises:
+            ValueError: If `X` has an unexpected number of features or if the model has not
+                been fitted before calling this method.
+        """
         check_is_fitted(self, ["linear_", "scaler_", "W_", "b_"])
         X = check_array(X, accept_sparse=False, ensure_2d=True)
         if X.shape[1] != self.W_.shape[0]:

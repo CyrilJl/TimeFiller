@@ -4,9 +4,10 @@ API Reference
 =============
 
 .. autoclass:: timefiller.ImputeMultiVariate
-   :members:
+   :members: __call__
 
 .. autoclass:: timefiller.TimeSeriesImputer
-   :members:
+   :members: __call__
 
 .. autoclass:: timefiller.ExtremeLearningMachine
+   :members: fit predict
