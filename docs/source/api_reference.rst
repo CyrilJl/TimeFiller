@@ -1,3 +1,5 @@
+.. _api_reference:
+
 API Reference
 =============
 
@@ -8,4 +10,3 @@ API Reference
    :members:
 
 .. autoclass:: timefiller.ExtremeLearningMachine
-   :members:
