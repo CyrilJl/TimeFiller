@@ -6,3 +6,6 @@ API Reference
 
 .. autoclass:: timefiller.TimeSeriesImputer
    :members:
+
+.. autoclass:: timefiller.ExtremeLearningMachine
+   :members:

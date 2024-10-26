@@ -25,12 +25,6 @@ class ExtremeLearningMachine(BaseEstimator, RegressorMixin):
             randomness of the random projection. Pass an int for reproducible
             results across multiple function calls. Defaults to None.
 
-    Attributes:
-        scaler (StandardScaler): The scaler used to standardize input features.
-        linear (LinearRegression): The linear regression model used for final prediction.
-        W_ (ndarray of shape (n_features, n_random_features)): The random projection matrix.
-        b_ (ndarray of shape (n_random_features, )): Bias vector for random projection.
-
     Raises:
         ValueError: If both `n_features_projection` and `ratio_features_projection` are None,
             or if `ratio_features_projection` is <= 0.
