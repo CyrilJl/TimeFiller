@@ -14,13 +14,13 @@ class ExtremeLearningMachine(BaseEstimator, RegressorMixin):
     model on the transformed features. The random projection helps in learning
     non-linear patterns in the data.
 
-    Args:
+    Args:        
+        ratio_features_projection (float, optional): The ratio determining the number of random
+            features relative to input features. Used only if `n_features_projection` is None.
+            Must be greater than 0 if used. Defaults to 10.
         n_features_projection (int, optional): The number of random projection features.
             If None, `ratio_features_projection` is used to determine this value.
             Defaults to None.
-        ratio_features_projection (float, optional): The ratio determining the number of random
-            features relative to input features. Used only if `n_features_projection` is None.
-            Must be greater than 0 if used. Defaults to 1.5.
         random_state (int, RandomState instance or None, optional): Controls the
             randomness of the random projection. Pass an int for reproducible
             results across multiple function calls. Defaults to None.
@@ -30,7 +30,7 @@ class ExtremeLearningMachine(BaseEstimator, RegressorMixin):
             or if `ratio_features_projection` is <= 0.
     """
 
-    def __init__(self, ratio_features_projection=3., n_features_projection=None, random_state=None):
+    def __init__(self, ratio_features_projection=10., n_features_projection=None, random_state=None):
         if n_features_projection is None and ratio_features_projection is None:
             raise ValueError("Either 'n_features_projection' or 'ratio_features_projection' must be set.")
         if ratio_features_projection is not None and ratio_features_projection <= 0:
