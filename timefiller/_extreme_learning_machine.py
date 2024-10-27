@@ -1,3 +1,4 @@
+import numpy as np
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
@@ -76,9 +77,7 @@ class ExtremeLearningMachine(BaseEstimator, RegressorMixin):
         self.W_ = rng.randn(X.shape[1], n_random_features)
         self.b_ = rng.randn(n_random_features)
 
-        Xt = self.scaler_.transform(X) @ self.W_ + self.b_
-        Xt[Xt < 0] = 0  # ReLU activation
-
+        Xt = np.maximum(self.scaler_.transform(X) @ self.W_ + self.b_, 0)
         self.linear_ = LinearRegression().fit(Xt, y, sample_weight=sample_weight)
         return self
 
@@ -104,6 +103,5 @@ class ExtremeLearningMachine(BaseEstimator, RegressorMixin):
         if X.shape[1] != self.W_.shape[0]:
             raise ValueError(f"Expected {self.W_.shape[0]} features, but got {X.shape[1]}.")
 
-        Xt = self.scaler_.transform(X) @ self.W_ + self.b_
-        Xt[Xt < 0] = 0  # ReLU activation
+        Xt = np.maximum(self.scaler_.transform(X) @ self.W_ + self.b_, 0)
         return self.linear_.predict(Xt)
