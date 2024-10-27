@@ -29,6 +29,22 @@ class ExtremeLearningMachine(BaseEstimator, RegressorMixin):
     Raises:
         ValueError: If both `n_features_projection` and `ratio_features_projection` are None,
             or if `ratio_features_projection` is <= 0.
+
+    Example:
+        .. code-block:: python
+
+            from sklearn.datasets import fetch_california_housing
+            from sklearn.linear_model import LinearRegression
+            from sklearn.model_selection import cross_val_score
+            from timefiller import ExtremeLearningMachine
+
+            X, y = fetch_california_housing(as_frame=True, return_X_y=True)
+
+            for estimator in (LinearRegression(), ExtremeLearningMachine(ratio_features_projection=3), ExtremeLearningMachine(ratio_features_projection=20)):
+                print(estimator, cross_val_score(estimator=estimator, X=X, y=y).mean())
+            >>> LinearRegression() 0.5530311140279566
+            >>> ExtremeLearningMachine(ratio_features_projection=3) 0.5276448340024226
+            >>> ExtremeLearningMachine(ratio_features_projection=20) 0.6344905228311806
     """
 
     def __init__(self, ratio_features_projection=10., n_features_projection=None, random_state=None):
@@ -105,3 +121,34 @@ class ExtremeLearningMachine(BaseEstimator, RegressorMixin):
 
         Xt = np.maximum(self.scaler_.transform(X) @ self.W_ + self.b_, 0)
         return self.linear_.predict(Xt)
+
+    def grad(self, X):
+        """
+        Computes the gradient of the predictions with respect to the input features.
+
+        This method calculates how small changes in the input features affect the 
+        final prediction, taking into account the scaling, random projection,
+        ReLU activation, and linear regression components of the model.
+
+        Args:
+            X (array-like of shape (n_samples, n_features)): The input data for which
+                to compute gradients.
+
+        Returns:
+            gradients (ndarray of shape (n_samples, n_features)): The gradients of the
+                predictions with respect to each input feature for each sample.
+
+        Raises:
+            ValueError: If `X` has an unexpected number of features or if the model has not
+                been fitted before calling this method.
+        """
+        check_is_fitted(self, ["linear_", "scaler_", "W_", "b_"])
+        X = check_array(X, accept_sparse=False, ensure_2d=True)
+        if X.shape[1] != self.W_.shape[0]:
+            raise ValueError(f"Expected {self.W_.shape[0]} features, but got {X.shape[1]}.")
+
+        Xt = self.scaler_.transform(X) @ self.W_ + self.b_
+        grad = self.linear_.coef_ * (Xt > 0).astype(float)
+        grad = grad @ self.W_.T
+        grad /= self.scaler_.scale_
+        return grad
