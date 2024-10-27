@@ -8,7 +8,7 @@ from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 from ._misc import check_params
 
 
-class ExtremeLearningMachine(BaseEstimator, RegressorMixin):
+class ExtremeLearningMachineRegressor(BaseEstimator, RegressorMixin):
     """
     This estimator first applies a random projection to the input features,
     followed by a ReLU activation function, and then fits a linear regression
@@ -90,7 +90,7 @@ class ExtremeLearningMachine(BaseEstimator, RegressorMixin):
                              )
 
         # Initialize random weights and bias for transformation
-        self.W_ = rng.randn(X.shape[1], n_random_features)
+        self.W_ = rng.randn(self.n_features_in, n_random_features)
         self.b_ = rng.randn(n_random_features)
 
         Xt = np.maximum(self.scaler_.transform(X) @ self.W_ + self.b_, 0)
