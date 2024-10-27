@@ -97,6 +97,14 @@ class ExtremeLearningMachine(BaseEstimator, RegressorMixin):
         self.linear_ = LinearRegression().fit(Xt, y, sample_weight=sample_weight)
         return self
 
+    def _check_and_transform(self, X):
+        check_is_fitted(self, ["linear_", "scaler_", "W_", "b_"])
+        X = check_array(X, accept_sparse=False, ensure_2d=True)
+        if X.shape[1] != self.W_.shape[0]:
+            raise ValueError(f"Expected {self.W_.shape[0]} features, but got {X.shape[1]}.")
+
+        return np.maximum(self.scaler_.transform(X) @ self.W_ + self.b_, 0)
+
     def predict(self, X):
         """
         Predicts target values for samples in `X`.
@@ -114,12 +122,7 @@ class ExtremeLearningMachine(BaseEstimator, RegressorMixin):
             ValueError: If `X` has an unexpected number of features or if the model has not
                 been fitted before calling this method.
         """
-        check_is_fitted(self, ["linear_", "scaler_", "W_", "b_"])
-        X = check_array(X, accept_sparse=False, ensure_2d=True)
-        if X.shape[1] != self.W_.shape[0]:
-            raise ValueError(f"Expected {self.W_.shape[0]} features, but got {X.shape[1]}.")
-
-        Xt = np.maximum(self.scaler_.transform(X) @ self.W_ + self.b_, 0)
+        Xt = self._check_and_transform(X=X)
         return self.linear_.predict(Xt)
 
     def grad(self, X):
@@ -142,12 +145,7 @@ class ExtremeLearningMachine(BaseEstimator, RegressorMixin):
             ValueError: If `X` has an unexpected number of features or if the model has not
                 been fitted before calling this method.
         """
-        check_is_fitted(self, ["linear_", "scaler_", "W_", "b_"])
-        X = check_array(X, accept_sparse=False, ensure_2d=True)
-        if X.shape[1] != self.W_.shape[0]:
-            raise ValueError(f"Expected {self.W_.shape[0]} features, but got {X.shape[1]}.")
-
-        Xt = self.scaler_.transform(X) @ self.W_ + self.b_
+        Xt = self._check_and_transform(X=X)
         grad = self.linear_.coef_ * (Xt > 0).astype(float)
         grad = grad @ self.W_.T
         grad /= self.scaler_.scale_
