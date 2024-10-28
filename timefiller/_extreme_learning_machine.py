@@ -1,4 +1,5 @@
 import numpy as np
+from numba import njit, prange
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
@@ -90,20 +91,57 @@ class ExtremeLearningMachine(BaseEstimator, RegressorMixin):
                              )
 
         # Initialize random weights and bias for transformation
-        self.W_ = rng.randn(X.shape[1], n_random_features)
+        self.W_ = rng.randn(X.shape[1], n_random_features)/self.scaler_.scale_[:, None]
         self.b_ = rng.randn(n_random_features)
 
-        Xt = np.maximum(self.scaler_.transform(X) @ self.W_ + self.b_, 0)
+        Xt = self.transform(X=X, means=self.scaler_.mean_, W=self.W_, b=self.b_)
         self.linear_ = LinearRegression().fit(Xt, y, sample_weight=sample_weight)
         return self
+
+    @staticmethod
+    @njit(parallel=True, boundscheck=False)
+    def transform(X, means, W, b):
+        n_samples, n_features = X.shape
+        n_features_projection = W.shape[1]
+        Xt = np.empty((n_samples, n_features_projection), dtype=X.dtype)
+
+        for i in prange(n_samples):
+            for j in range(n_features_projection):
+                acc = 0.  # Accumulate for the dot product
+                for k in range(n_features):
+                    acc += (X[i, k] - means[k]) * W[k, j]
+                Xt[i, j] = max(acc + b[j], 0)
+        return Xt
+
+    @njit(parallel=True, boundscheck=False)
+    def transform_and_predict(X, means, W, b, coef, intercept):
+        n_samples, n_features = X.shape
+        n_features_projection = W.shape[1]
+        predictions = np.empty(n_samples, dtype=X.dtype)
+
+        for i in prange(n_samples):
+            pred = intercept  # Start with intercept for each sample
+            for j in range(n_features_projection):
+                acc = 0.0  # Accumulate for the dot product
+                for k in range(n_features):
+                    acc += (X[i, k] - means[k]) * W[k, j]
+                pred += max(acc + b[j], 0) * coef[j]
+            predictions[i] = pred
+        return predictions
 
     def _check_and_transform(self, X):
         check_is_fitted(self, ["linear_", "scaler_", "W_", "b_"])
         X = check_array(X, accept_sparse=False, ensure_2d=True)
         if X.shape[1] != self.W_.shape[0]:
             raise ValueError(f"Expected {self.W_.shape[0]} features, but got {X.shape[1]}.")
+        return self.transform(X=X, means=self.scaler_.mean_, W=self.W_, b=self.b_)
 
-        return np.maximum(self.scaler_.transform(X) @ self.W_ + self.b_, 0)
+    def _check_transform_and_predict(self, X):
+        check_is_fitted(self, ["linear_", "scaler_", "W_", "b_"])
+        X = check_array(X, accept_sparse=False, ensure_2d=True)
+        if X.shape[1] != self.W_.shape[0]:
+            raise ValueError(f"Expected {self.W_.shape[0]} features, but got {X.shape[1]}.")
+        return self.transform_and_predict(X=X, means=self.scaler_.mean_, W=self.W_, b=self.b_)
 
     def predict(self, X):
         """
@@ -122,31 +160,4 @@ class ExtremeLearningMachine(BaseEstimator, RegressorMixin):
             ValueError: If `X` has an unexpected number of features or if the model has not
                 been fitted before calling this method.
         """
-        Xt = self._check_and_transform(X=X)
-        return self.linear_.predict(Xt)
-
-    def grad(self, X):
-        """
-        Computes the gradient of the predictions with respect to the input features.
-
-        This method calculates how small changes in the input features affect the 
-        final prediction, taking into account the scaling, random projection,
-        ReLU activation, and linear regression components of the model.
-
-        Args:
-            X (array-like of shape (n_samples, n_features)): The input data for which
-                to compute gradients.
-
-        Returns:
-            gradients (ndarray of shape (n_samples, n_features)): The gradients of the
-                predictions with respect to each input feature for each sample.
-
-        Raises:
-            ValueError: If `X` has an unexpected number of features or if the model has not
-                been fitted before calling this method.
-        """
-        Xt = self._check_and_transform(X=X)
-        grad = self.linear_.coef_ * (Xt > 0).astype(float)
-        grad = grad @ self.W_.T
-        grad /= self.scaler_.scale_
-        return grad
+        return self._check_transform_and_predict(X)
