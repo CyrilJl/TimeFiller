@@ -13,11 +13,11 @@ Class Arguments
 
 ``estimator``
 ~~~~~~~~~~~~~
-The machine learning model or algorithm used for imputation. Any model compatible with scikit-learn’s
-``fit`` and ``predict`` methods can be used. By default, this is set to timefiller's implementation of an
-`Extreme Learning Machine <https://en.wikipedia.org/wiki/Extreme_learning_machine>`_, which involves a
-random projection followed by a ReLU activation and a linear regression. However, it can be easily
-customized to use any other estimator compatible with scikit-learn.
+The machine learning model or algorithm used for imputation can be any model compatible with scikit-learn’s ``fit`` and ``predict`` methods. By default, this is set to scikit-learn's ``Ridge`` implementation, as it is fast and provides regularization.
+
+``timefiller`` also includes an implementation of an `Extreme Learning Machine <https://en.wikipedia.org/wiki/Extreme_learning_machine>`_, which involves a random projection followed by a ReLU activation and a linear regression. However, its implementation is still ~3x slower than ``Ridge`` alone and may be limiting for large datasets.
+
+Nonetheless, the ``estimator`` argument can be easily customized to use any other estimator compatible with scikit-learn.
 
 .. code-block:: python
 
