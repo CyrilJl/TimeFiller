@@ -92,6 +92,3 @@ estimator may be necessary.
 
 One important point to keep in mind is that within a single column, two different rows (timestamps) may be imputed using different estimators
 (regressors), each trained on distinct sets of columns (covariate features) and samples (rows/timestamps).
-
-As for the default estimator, ``timefiller`` provides its own custom regressor which is a scikit-learn version of Extreme Learning Machine
-(see :ref:`api_reference`), with ReLU activation. It provides non-linear handling of input features while being faster to fit than Neural Networks.
