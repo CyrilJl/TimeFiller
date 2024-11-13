@@ -123,7 +123,7 @@ In some cases, imputation may only be needed for data within a certain time rang
     tsi = TimeSeriesImputer()
     df_imputed = tsi(df, subset_cols=['col1', 'col2'], after='2024-01-01', before='2024-01-31')
 
-n_nearest_features
+``n_nearest_features``
 ~~~~~~~~~~~~~~~~~~
 To speed up the imputation process, you can perform variable selection before running the imputation, which is especially
 useful for datasets with a large number of covariates. This method samples features based on their correlation with the
