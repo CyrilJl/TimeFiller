@@ -1,4 +1,5 @@
 import numpy as np
+from numba import njit, prange
 from optimask import OptiMask
 from sklearn.linear_model import LinearRegression
 
@@ -61,13 +62,44 @@ class ImputeMultiVariate:
         columns = [other_cols[pattern] for pattern in patterns]
         return index_predict, columns
 
+    @staticmethod
+    @njit(parallel=True)
+    def _split(X, index_predict, selected_rows, selected_cols, col_to_impute):
+        n_rows_train = len(selected_rows)
+        n_cols = len(selected_cols)
+        n_rows_pred = len(index_predict)
+
+        X_train = np.empty((n_rows_train, n_cols), dtype=X.dtype)
+        y_train = np.empty(n_rows_train, dtype=X.dtype)
+        X_pred = np.empty((n_rows_pred, n_cols), dtype=X.dtype)
+
+        for i in prange(n_rows_train):
+            si = selected_rows[i]
+            for j in range(n_cols):
+                X_train[i, j] = X[si, selected_cols[j]]
+            y_train[i] = X[si, col_to_impute]
+
+        for i in prange(n_rows_pred):
+            for j in range(n_cols):
+                X_pred[i, j] = X[index_predict[i], selected_cols[j]]
+
+        return X_train, y_train, X_pred
+
+    @staticmethod
+    @njit(parallel=True)
+    def _subset(X, rows, columns):
+        Xs = np.empty((len(rows), len(columns)), dtype=X.dtype)
+        for i in prange(len(rows)):
+            for j in range(len(columns)):
+                Xs[i, j] = X[rows[i], columns[j]]
+        return Xs
+
     def _prepare_train_and_pred_data(self, X, mask_nan, columns, col_to_impute, index_predict):
         trainable_rows = np.flatnonzero(~mask_nan[:, col_to_impute])
-        rows, cols = self.optimask.solve(X[np.ix_(trainable_rows, columns)])
+        rows, cols = self.optimask.solve(self._subset(X, trainable_rows, columns))
         selected_rows, selected_cols = trainable_rows[rows], columns[cols]
-        X_train, y_train = X[np.ix_(selected_rows, selected_cols)], X[selected_rows, col_to_impute]
-        X_predict = X[np.ix_(index_predict, selected_cols)]
-        return X_train, y_train, X_predict, selected_rows, selected_cols
+        X_train, y_train, X_pred = self._split(X=X, index_predict=index_predict, selected_rows=selected_rows, selected_cols=selected_cols, col_to_impute=col_to_impute)
+        return X_train, y_train, X_pred, selected_rows, selected_cols
 
     def _perform_imputation(self, X_train, y_train, X_predict, selected_rows):
         if callable(self.weighting_func):
