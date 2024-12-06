@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from sklearn.feature_selection import r_regression
+from sklearn.linear_model import Ridge
 from tqdm.auto import tqdm
 
-from ._extreme_learning_machine import ExtremeLearningMachineRegressor
 from ._misc import check_params
 from ._multivariate_imputer import ImputeMultiVariate
 
@@ -13,7 +13,7 @@ class TimeSeriesImputer:
     """Class for time series imputation.
 
     Args:
-        estimator (object, optional): Estimator used for imputation.
+        estimator (object, optional): Estimator used for imputation. Defaults to Ridge
         preprocessing (callable, optional): Data preprocessing.
         ar_lags (int, list, numpy.ndarray, or tuple, optional): Autoregressive lags to consider.
         multivariate_lags (int or None, optional): Multivariate lags to consider.
@@ -28,7 +28,7 @@ class TimeSeriesImputer:
     def __init__(self, estimator=None, preprocessing=None, ar_lags=None, multivariate_lags=None, na_frac_max=0.33,
                  min_samples_train=50, weighting_func=None, optimask_n_tries=1, verbose=False, random_state=None):
         if estimator is None:
-            estimator = ExtremeLearningMachineRegressor()
+            estimator = Ridge(alpha=1e-5)
         self.imputer = ImputeMultiVariate(estimator=estimator, preprocessing=preprocessing,
                                           na_frac_max=na_frac_max, min_samples_train=min_samples_train,
                                           weighting_func=weighting_func, optimask_n_tries=optimask_n_tries,
