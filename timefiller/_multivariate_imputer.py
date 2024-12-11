@@ -63,7 +63,7 @@ class ImputeMultiVariate:
         return index_predict, columns
 
     @staticmethod
-    @njit(parallel=True)
+    @njit(parallel=True, fastmath=True, boundscheck=False)
     def _split(X, index_predict, selected_rows, selected_cols, col_to_impute):
         n_rows_train = len(selected_rows)
         n_cols = len(selected_cols)
@@ -86,7 +86,7 @@ class ImputeMultiVariate:
         return X_train, y_train, X_pred
 
     @staticmethod
-    @njit(parallel=True)
+    @njit(parallel=True, fastmath=True, boundscheck=False)
     def _subset(X, rows, columns):
         Xs = np.empty((len(rows), len(columns)), dtype=X.dtype)
         for i in prange(len(rows)):
