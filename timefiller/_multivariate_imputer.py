@@ -1,7 +1,7 @@
 import numpy as np
 from numba import njit, prange
 from optimask import OptiMask
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import Ridge
 
 from ._misc import InvalidEstimatorError, InvalidSubsetError, check_params
 
@@ -11,7 +11,7 @@ class ImputeMultiVariate:
     The ``ImputeMultiVariate`` class has been developed to address the problem of imputing missing values in multivariate data.
     It relies on regression techniques to estimate missing values using information available in other columns.
     This class offers great flexibility by allowing users to specify a custom regression estimator, while also providing
-    a default option to use linear regression from the scikit-learn library. Additionally, it takes into account important parameters
+    a default option to use ridge regression from the scikit-learn library. Additionally, it takes into account important parameters
     such as the maximum fraction of missing values allowed in a column and the minimum number of samples required for
     imputation.
     """
@@ -32,7 +32,7 @@ class ImputeMultiVariate:
     @staticmethod
     def _process_estimator(estimator):
         if estimator is None:
-            return LinearRegression()
+            return Ridge()
         if not (hasattr(estimator, 'fit') and hasattr(estimator, 'predict')):
             raise InvalidEstimatorError()
         else:
