@@ -198,7 +198,8 @@ class TimeSeriesImputer:
         Returns:
             list: List of lags offering the best correlation.
         """
-        assert len(s1) == len(s2)
+        if len(s1) != len(s2):
+            raise ValueError("The length of s1 and s2 must be the same.")
         if max_lags == 'auto':
             max_lags = int(0.05 * len(s1))
         lags, cc = cls.cross_correlation(s1=s1.values, s2=s2.values, max_lags=max_lags)
