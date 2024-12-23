@@ -60,6 +60,16 @@ class PositiveOutput(TransformerMixin):
             self.thresholds_ = np.full(shape=X_subset.shape[1], fill_value=self.v)
         return self
 
+    def extract_subset_with_copy(self, X):
+        X_copy = X.copy()
+        if isinstance(X, pd.DataFrame) and self.columns is not None:
+            X_subset = X[self.columns].values
+        else:
+            X_subset = np.asarray(X)
+
+        mask = X_subset < self.thresholds_
+        return X_copy, X_subset, mask
+
     def transform(self, X, y=None):
         """
         Apply negative expansion on the data.
@@ -71,13 +81,7 @@ class PositiveOutput(TransformerMixin):
         Returns:
             array-like or DataFrame: The transformed data with negative expansion.
         """
-        if isinstance(X, pd.DataFrame) and self.columns is not None:
-            X_copy = X.copy()
-            X_subset = X[self.columns].values
-        else:
-            X_subset = np.asarray(X)
-
-        mask = X_subset < self.thresholds_
+        X_copy, X_subset, mask = self.extract_subset_with_copy(X)
         transformed = np.where(mask, 2 * X_subset - self.thresholds_, X_subset)
 
         if isinstance(X, pd.DataFrame) and self.columns is not None:
@@ -96,13 +100,7 @@ class PositiveOutput(TransformerMixin):
         Returns:
             array-like or DataFrame: The original data after reversing the negative expansion.
         """
-        if isinstance(X, pd.DataFrame) and self.columns is not None:
-            X_copy = X.copy()
-            X_subset = X[self.columns].values
-        else:
-            X_subset = np.asarray(X)
-
-        mask = X_subset < self.thresholds_
+        X_copy, X_subset, mask = self.extract_subset_with_copy(X)
         inverted = np.maximum(0, np.where(mask, 0.5 * X_subset + self.thresholds_ / 2, X_subset))
 
         if isinstance(X, pd.DataFrame) and self.columns is not None:
