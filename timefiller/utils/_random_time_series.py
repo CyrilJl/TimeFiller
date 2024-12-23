@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
 from sklearn.datasets import make_spd_matrix
@@ -45,12 +47,15 @@ def generate_random_time_series(n, start, freq, periods, cov=None, mean=None, ke
     return df
 
 
-def add_mar_nan(df, ratio) -> pd.DataFrame:
+def add_mar_nan(df, ratio) -> Tuple[pd.DataFrame, np.ndarray]:
     """Create Missing at Random Values"""
     df_copy = df.copy()
     total_values = df_copy.size
     n_nan = int(total_values * ratio)
     nan_indices = np.random.choice(total_values, n_nan, replace=False)
     nan_indices = np.unravel_index(nan_indices, df_copy.shape)
-    df_copy.values[nan_indices] = np.nan
+    if isinstance(df, np.ndarray):
+        df_copy[nan_indices] = np.nan
+    if isinstance(df, pd.DataFrame):
+        df_copy.values[nan_indices] = np.nan
     return df_copy

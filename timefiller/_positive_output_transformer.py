@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from sklearn.base import TransformerMixin
 
 __all__ = ['PositiveOutput']
@@ -6,68 +7,105 @@ __all__ = ['PositiveOutput']
 
 class PositiveOutput(TransformerMixin):
     """
-    Parameters:
-    - q (float, optional): The quantile used as a threshold for expansion. 
-                            Default is q=10, which means the 10th percentile is used as the threshold.
-    - v (float, optional): Fixed value used as a threshold for negative expansion.
-                            If `v` is specified, this threshold will be used for all features.
-                            Default is v=None, which means the threshold is automatically calculated from the data.
+    A transformer that applies negative expansion to data based on a threshold.
+
+    Args:
+        q (float, optional): The quantile used as a threshold for expansion. Default is `10`, 
+            which means the 10th percentile is used as the threshold. If `v` is provided, 
+            `q` is ignored.
+        v (float, optional): A fixed value used as a threshold for negative expansion. 
+            If provided, this threshold will be used for all features. Default is `None`, 
+            which means the threshold is automatically calculated from the data.
+        columns (list, optional): List of column names to process if the input is a DataFrame. 
+            If `None`, all columns will be processed. Default is `None`.
+
+    Raises:
+        ValueError: If both `q` and `v` are `None`.
     """
 
-    def __init__(self, q=10, v=None):
+    def __init__(self, q=10, v=None, columns=None):
         if q is None and v is None:
             raise ValueError("At least one of the arguments 'q' or 'v' must be different from None.")
 
         self.q = q
         self.v = v
+        self.columns = columns
         self.thresholds_ = None
 
     def fit(self, X, y=None):
         """
         Calculate and store the thresholds necessary for negative expansion.
 
-        Parameters:
-        - X (array-like): The training data.
-        - y (array-like, optional): The training labels. Not used here.
+        Args:
+            X (array-like or DataFrame): The training data. Must not contain negative values.
+            y (array-like, optional): The training labels. Not used in this method.
 
         Returns:
-        - self: The fitted PositiveOutput object.
+            PositiveOutput: The fitted instance of the transformer.
+
+        Raises:
+            ValueError: If the data contains negative values.
         """
-        if np.nanmin(X) < 0:
+        if isinstance(X, pd.DataFrame) and self.columns is not None:
+            X_subset = X[self.columns]
+        else:
+            X_subset = X
+
+        if np.nanmin(X_subset) < 0:
             raise ValueError("The data must not contain negative values.")
 
         if self.v is None:
-            self.thresholds_ = np.nanpercentile(X, q=self.q, axis=0)
+            self.thresholds_ = np.nanpercentile(X_subset, q=self.q, axis=0)
         else:
-            self.thresholds_ = np.full(shape=X.shape[1], fill_value=self.v)
+            self.thresholds_ = np.full(shape=X_subset.shape[1], fill_value=self.v)
         return self
 
     def transform(self, X, y=None):
         """
         Apply negative expansion on the data.
 
-        Parameters:
-        - X (array-like): The data to transform.
-        - y (array-like, optional): The labels. Not used here.
+        Args:
+            X (array-like or DataFrame): The data to transform.
+            y (array-like, optional): The labels. Not used in this method.
 
         Returns:
-        - array-like: The transformed data with negative expansion.
+            array-like or DataFrame: The transformed data with negative expansion.
         """
-        X = np.asarray(X)
-        mask = X < self.thresholds_
-        return np.where(mask, 2 * X - self.thresholds_, X)
+        if isinstance(X, pd.DataFrame) and self.columns is not None:
+            X_copy = X.copy()
+            X_subset = X[self.columns].values
+        else:
+            X_subset = np.asarray(X)
+
+        mask = X_subset < self.thresholds_
+        transformed = np.where(mask, 2 * X_subset - self.thresholds_, X_subset)
+
+        if isinstance(X, pd.DataFrame) and self.columns is not None:
+            X_copy[self.columns] = transformed
+            return X_copy
+        return transformed
 
     def inverse_transform(self, X, y=None):
         """
         Reverse the negative expansion on the transformed data.
 
-        Parameters:
-        - X (array-like): The transformed data.
-        - y (array-like, optional): The labels. Not used here.
+        Args:
+            X (array-like or DataFrame): The transformed data to invert.
+            y (array-like, optional): The labels. Not used in this method.
 
         Returns:
-        - array-like: The inverted data after negative expansion.
+            array-like or DataFrame: The original data after reversing the negative expansion.
         """
-        X = np.asarray(X)
-        mask = X < self.thresholds_
-        return np.maximum(0, np.where(mask, 0.5 * X + self.thresholds_ / 2, X))
+        if isinstance(X, pd.DataFrame) and self.columns is not None:
+            X_copy = X.copy()
+            X_subset = X[self.columns].values
+        else:
+            X_subset = np.asarray(X)
+
+        mask = X_subset < self.thresholds_
+        inverted = np.maximum(0, np.where(mask, 0.5 * X_subset + self.thresholds_ / 2, X_subset))
+
+        if isinstance(X, pd.DataFrame) and self.columns is not None:
+            X_copy[self.columns] = inverted
+            return X_copy
+        return inverted

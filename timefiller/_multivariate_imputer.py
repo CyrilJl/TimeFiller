@@ -1,93 +1,169 @@
 import numpy as np
+from mapie.regression import MapieRegressor
 from numba import njit, prange
 from optimask import OptiMask
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import Ridge
+from tqdm.auto import tqdm
 
-from ._misc import InvalidEstimatorError, InvalidSubsetError, check_params
+from ._misc import InvalidEstimatorError, check_params
 
 
 class ImputeMultiVariate:
     """
-    The ``ImputeMultiVariate`` class has been developed to address the problem of imputing missing values in multivariate data.
-    It relies on regression techniques to estimate missing values using information available in other columns.
-    This class offers great flexibility by allowing users to specify a custom regression estimator, while also providing
-    a default option to use linear regression from the scikit-learn library. Additionally, it takes into account important parameters
-    such as the maximum fraction of missing values allowed in a column and the minimum number of samples required for
-    imputation.
+    Multivariate imputation of missing data in a numerical array.
+
+    This class uses an estimator to fit a model on training data (non-missing)
+    and predict missing values. It can also estimate prediction intervals
+    if an instance of `MapieRegressor` is used with the `alpha` parameter.
     """
 
-    def __init__(self, estimator=None, preprocessing=None, na_frac_max=0.33, min_samples_train=50, weighting_func=None, optimask_n_tries=1, verbose=False):
-        self.estimator = self._process_estimator(estimator)
-        self.preprocessing = preprocessing
-        self.na_frac_max = na_frac_max
-        self.min_samples_train = min_samples_train
-        self.weighting_func = weighting_func
-        self.optimask = OptiMask(n_tries=optimask_n_tries)
-        self.verbose = bool(verbose)
+    def __init__(
+        self,
+        estimator=None,
+        alpha=None,
+        na_frac_max=0.33,
+        min_samples_train=50,
+        weighting_func=None,
+        optimask_n_tries=1,
+        random_state=None,
+        verbose=0
+    ):
+        """
+        Initialize the multivariate imputer.
 
-    def __repr__(self):
-        params = ", ".join(f"{k}={getattr(self, k)}" for k in ('estimator',))
-        return f"ImputeMultiVariate({params})"
+        Args:
+            estimator (object, optional): Estimator to use for regression.
+                Must have `fit` and `predict` methods. Default is `Ridge()`.
+            alpha (float or list, optional): Quantile levels for obtaining
+                prediction intervals via `MapieRegressor`. If None, no intervals.
+                Default is None.
+            na_frac_max (float, optional): Maximum fraction of missing values
+                allowed per column for imputation. Default is 0.33.
+            min_samples_train (int, optional): Minimum number of training samples
+                required to fit the model. Default is 50.
+            weighting_func (callable, optional): Weighting function for samples
+                during model fitting. Must accept an array of indices and return
+                an array of weights. Default is None.
+            optimask_n_tries (int, optional): Number of attempts to solve the
+                sample selection problem using `OptiMask`. Default is 1.
+            random_state (int, optional): Seed for the random generator.
+                Default is None.
+            verbose (int or bool, optional): Verbosity level. Default is 0.
+        """
+        self.estimator = self._process_estimator(estimator)
+        self.alpha = (alpha,) if isinstance(alpha, float) else alpha
+        if self.alpha is not None:
+            self.estimator = MapieRegressor(estimator=self.estimator)
+        self.na_frac_max = check_params(na_frac_max, types=(float))
+        self.min_samples_train = check_params(min_samples_train, types=int)
+        self.weighting_func = weighting_func
+        self.optimask = OptiMask(n_tries=optimask_n_tries, random_state=random_state)
+        self.verbose = check_params(verbose, types=(bool, int))
 
     @staticmethod
     def _process_estimator(estimator):
-        if estimator is None:
-            return LinearRegression()
-        if not (hasattr(estimator, 'fit') and hasattr(estimator, 'predict')):
-            raise InvalidEstimatorError()
-        else:
-            return estimator
+        """
+        Validate and process the provided estimator.
+
+        Args:
+            estimator (object): The estimator to validate.
+
+        Returns:
+            object: The validated estimator.
+
+        Raises:
+            TypeError: If the estimator does not have `fit` and `predict` methods.
+        """
+        return Ridge() if estimator is None else estimator if hasattr(estimator, 'fit') and hasattr(estimator, 'predict') else InvalidEstimatorError()
 
     @staticmethod
     def _process_subset(X, subset, axis):
+        """
+        Processes the provided subset (rows or columns) and returns a list of valid indices.
+
+        Args:
+            X (np.ndarray): Data array.
+            subset (int, list, np.ndarray, tuple, None): Subset of rows or columns.
+            axis (int): 0 for rows, 1 for columns.
+
+        Returns:
+            list: List of valid indices for the subset.
+
+        Raises:
+            InvalidSubsetError: If an index is out of bounds.
+        """
         n = X.shape[axis]
         check_params(subset, types=(int, list, np.ndarray, tuple, type(None)))
-        if isinstance(subset, int):
-            if subset >= n:
-                raise InvalidSubsetError(f"The subset index {subset} is out of bounds for axis {axis} with size {n}.")
-            else:
-                return [subset]
-        if isinstance(subset, (list, np.ndarray, tuple)):
-            return sorted(list(subset))
-        if subset is None:
-            return list(range(n))
+        return list(range(n)) if subset is None else [subset] if isinstance(subset, int) and subset < n else sorted(subset)
 
-    @staticmethod
-    def _prepare_data(mask_nan, col_to_impute, subset_rows):
+    @classmethod
+    def _prepare_data(cls, mask_nan, col_to_impute, subset_rows):
+        """
+        Prepares the data for imputing a specific column.
+
+        Args:
+            mask_nan (np.ndarray): Boolean mask of missing values.
+            col_to_impute (int): Index of the column to impute.
+            subset_rows (list): List of row indices to consider.
+
+        Returns:
+            tuple: (index_predict, columns)
+            - index_predict (list): List of arrays of row indices to predict.
+            - columns (list): List of arrays of column indices available for training.
+        """
         rows_to_impute = np.flatnonzero(mask_nan[:, col_to_impute] & ~mask_nan.all(axis=1))
         rows_to_impute = np.intersect1d(ar1=rows_to_impute, ar2=subset_rows)
         other_cols = np.setdiff1d(ar1=np.arange(mask_nan.shape[1]), ar2=[col_to_impute])
-        patterns, indexes = np.unique(~mask_nan[np.ix_(rows_to_impute, other_cols)], return_inverse=True, axis=0)
+        patterns, indexes = np.unique(~cls._subset(X=mask_nan, rows=rows_to_impute, columns=other_cols), return_inverse=True, axis=0)
         index_predict = [rows_to_impute[indexes == k] for k in range(len(patterns))]
         columns = [other_cols[pattern] for pattern in patterns]
         return index_predict, columns
 
     @staticmethod
-    @njit(parallel=True)
+    @njit(parallel=True, fastmath=True, boundscheck=False, cache=True)
     def _split(X, index_predict, selected_rows, selected_cols, col_to_impute):
-        n_rows_train = len(selected_rows)
-        n_cols = len(selected_cols)
-        n_rows_pred = len(index_predict)
+        """
+        Splits the data into training and prediction sets.
 
-        X_train = np.empty((n_rows_train, n_cols), dtype=X.dtype)
-        y_train = np.empty(n_rows_train, dtype=X.dtype)
-        X_pred = np.empty((n_rows_pred, n_cols), dtype=X.dtype)
+        Args:
+            X (np.ndarray): Data array.
+            index_predict (np.ndarray): Indices of rows to predict.
+            selected_rows (np.ndarray): Indices of rows selected for training.
+            selected_cols (np.ndarray): Indices of columns selected for training.
+            col_to_impute (int): Index of the column to impute.
 
-        for i in prange(n_rows_train):
-            si = selected_rows[i]
-            for j in range(n_cols):
-                X_train[i, j] = X[si, selected_cols[j]]
-            y_train[i] = X[si, col_to_impute]
-
-        for i in prange(n_rows_pred):
-            for j in range(n_cols):
+        Returns:
+            tuple: (X_train, y_train, X_pred)
+            - X_train (np.ndarray): Training data.
+            - y_train (np.ndarray): Training targets.
+            - X_pred (np.ndarray): Data to predict.
+        """
+        X_train = np.empty((len(selected_rows), len(selected_cols)))
+        y_train = np.empty(len(selected_rows))
+        X_pred = np.empty((len(index_predict), len(selected_cols)))
+        for i in prange(len(selected_rows)):
+            for j in prange(len(selected_cols)):
+                X_train[i, j] = X[selected_rows[i], selected_cols[j]]
+            y_train[i] = X[selected_rows[i], col_to_impute]
+        for i in prange(len(index_predict)):
+            for j in prange(len(selected_cols)):
                 X_pred[i, j] = X[index_predict[i], selected_cols[j]]
-
         return X_train, y_train, X_pred
 
     @staticmethod
-    @njit(parallel=True)
+    @njit(parallel=True, fastmath=True, boundscheck=False, cache=True)
     def _subset(X, rows, columns):
+        """
+        Extracts a subset from the array X.
+
+        Args:
+            X (np.ndarray): Data array.
+            rows (np.ndarray): Row indices.
+            columns (np.ndarray): Column indices.
+
+        Returns:
+            np.ndarray: Corresponding subarray.
+        """
         Xs = np.empty((len(rows), len(columns)), dtype=X.dtype)
         for i in prange(len(rows)):
             for j in range(len(columns)):
@@ -95,6 +171,20 @@ class ImputeMultiVariate:
         return Xs
 
     def _prepare_train_and_pred_data(self, X, mask_nan, columns, col_to_impute, index_predict):
+        """
+        Prepares training and prediction data by selecting an optimal subset
+        via `OptiMask`.
+
+        Args:
+            X (np.ndarray): Data array.
+            mask_nan (np.ndarray): Mask of missing values.
+            columns (np.ndarray): Columns available for training.
+            col_to_impute (int): Column to impute.
+            index_predict (np.ndarray): Indices of rows to predict.
+
+        Returns:
+            tuple: (X_train, y_train, X_pred, selected_rows, selected_cols)
+        """
         trainable_rows = np.flatnonzero(~mask_nan[:, col_to_impute])
         rows, cols = self.optimask.solve(self._subset(X, trainable_rows, columns))
         selected_rows, selected_cols = trainable_rows[rows], columns[cols]
@@ -102,48 +192,72 @@ class ImputeMultiVariate:
         return X_train, y_train, X_pred, selected_rows, selected_cols
 
     def _perform_imputation(self, X_train, y_train, X_predict, selected_rows):
+        """
+        Fits the model and predicts the missing values.
+
+        Args:
+            X_train (np.ndarray): Training data.
+            y_train (np.ndarray): Training targets.
+            X_predict (np.ndarray): Data to predict.
+            selected_rows (np.ndarray): Rows selected for training.
+
+        Returns:
+            np.ndarray or tuple: Predictions only or (predictions, confidence intervals)
+            if self.alpha is defined.
+        """
         if callable(self.weighting_func):
             sample_weight = self.weighting_func(selected_rows)
         else:
             sample_weight = None
-        model = self.estimator.fit(X_train, y_train, sample_weight=sample_weight)
-        return model.predict(X_predict)
+        self.estimator.fit(X_train, y_train, sample_weight=sample_weight)
+        if self.alpha is not None:
+            return self.estimator.predict(X_predict, alpha=self.alpha)
+        else:
+            return self.estimator.predict(X_predict)
 
     def _impute(self, X, subset_rows, subset_cols):
-        ret = np.array(X, dtype=float)
-        mask_nan = np.isnan(X)
-        imputable_cols = (0 < mask_nan[subset_rows].sum(axis=0)) & (mask_nan.mean(axis=0) <= self.na_frac_max) & (np.nanstd(X, axis=0) > 0)
-        imputable_cols = np.intersect1d(np.flatnonzero(imputable_cols), subset_cols)
+        """
+        Imputes missing values in the array X for the specified rows and columns.
 
-        for col_to_impute in imputable_cols:
-            index_predict, columns = self._prepare_data(mask_nan=mask_nan, col_to_impute=col_to_impute, subset_rows=subset_rows)
+        Args:
+            X (np.ndarray): Data array.
+            subset_rows (list): Row indices.
+            subset_cols (list): Column indices.
+
+        Returns:
+            np.ndarray or tuple: Imputed array and optionally uncertainties
+            if self.alpha is defined.
+        """
+        imputation, mask_nan = X.copy(), np.isnan(X)
+        uncertainties = np.full((2*len(self.alpha),) + imputation.shape, np.nan) if self.alpha else None
+        imputable_cols = np.intersect1d(np.flatnonzero((0 < mask_nan[subset_rows].sum(axis=0)) & (mask_nan.mean(axis=0) <= self.na_frac_max)), subset_cols)
+        for col_to_impute in tqdm(imputable_cols, disable=(self.verbose < 1)):
+            index_predict, columns = self._prepare_data(mask_nan, col_to_impute, subset_rows)
             for cols, index in zip(columns, index_predict):
                 X_train, y_train, X_predict, selected_rows, _ = self._prepare_train_and_pred_data(X, mask_nan, cols, col_to_impute, index)
                 if len(X_train) >= self.min_samples_train:
-                    ret[index, col_to_impute] = self._perform_imputation(X_train, y_train, X_predict, selected_rows)
-        return ret
+                    pred_result = self._perform_imputation(X_train, y_train, X_predict, selected_rows)
+                    if self.alpha:
+                        imputation[index, col_to_impute], s = pred_result
+                        uncertainties[:, index, col_to_impute] = np.sort(s.reshape(-1, 2*len(self.alpha)), axis=1).T
+                    else:
+                        imputation[index, col_to_impute] = pred_result
+        return (imputation, uncertainties) if self.alpha else imputation
 
-    def __call__(self, X, subset_rows=None, subset_cols=None):
+    def __call__(self, X: np.ndarray, subset_rows=None, subset_cols=None):
         """
-        Main method to perform missing value imputation in a multidimensional array.
+        Imputes missing data in X.
 
         Args:
-            X (numpy.ndarray): The input array with missing values.
-            subset_rows (int, list, numpy.ndarray, tuple, None): The row indices to consider for imputation. If None, all rows are considered. (default: None)
-            subset_cols (int, list, numpy.ndarray, tuple, None): The column indices to consider for imputation. If None, all columns are considered. (default: None)
+            X (np.ndarray): Data array to impute.
+            subset_rows (int, list, np.ndarray, tuple, None, optional): Subset of rows.
+            subset_cols (int, list, np.ndarray, tuple, None, optional): Subset of columns.
 
         Returns:
-            numpy.ndarray: The array with missing values imputed.
+            np.ndarray or tuple: Imputed array and optionally uncertainties.
         """
         check_params(X, types=np.ndarray)
+        check_params(X.dtype.kind, params=('i', 'f'))
         subset_rows = self._process_subset(X=X, subset=subset_rows, axis=0)
         subset_cols = self._process_subset(X=X, subset=subset_cols, axis=1)
-        if self.preprocessing is not None:
-            Xt = self.preprocessing.fit_transform(X)
-        else:
-            Xt = X.copy()
-
-        Xt = self._impute(X=Xt, subset_rows=subset_rows, subset_cols=subset_cols)
-        if self.preprocessing is not None:
-            Xt = self.preprocessing.inverse_transform(Xt)
-        return Xt
+        return self._impute(X=X, subset_rows=subset_rows, subset_cols=subset_cols)
