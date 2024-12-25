@@ -120,7 +120,7 @@ class ImputeMultiVariate:
         return index_predict, columns
 
     @staticmethod
-    @njit(parallel=True, fastmath=True, boundscheck=False, cache=True)
+    @njit(parallel=True, fastmath=True, boundscheck=False)
     def _split(X, index_predict, selected_rows, selected_cols, col_to_impute):
         """
         Splits the data into training and prediction sets.
@@ -151,7 +151,7 @@ class ImputeMultiVariate:
         return X_train, y_train, X_pred
 
     @staticmethod
-    @njit(parallel=True, fastmath=True, boundscheck=False, cache=True)
+    @njit(parallel=True, fastmath=True, boundscheck=False)
     def _subset(X, rows, columns):
         """
         Extracts a subset from the array X.
