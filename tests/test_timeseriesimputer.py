@@ -63,3 +63,17 @@ def test_impute_3(pems_data):
 
     # Check that there are no missing values after the cutoff date
     assert df_imputed.isnull().sum().sum() < pems_data.isnull().sum().sum()
+
+def test_impute_4(pems_data):
+    """Test imputation only after a specific date."""
+    tsi = TimeSeriesImputer(ar_lags=(1, 2, 3, 6), multivariate_lags=12)
+
+    # Define the cutoff date for imputation
+    after = '2017-05-01'
+    subset_cols = pems_data.sample(n=3, axis=1).columns
+
+    # Perform imputation only after the cutoff date
+    df_imputed = tsi(pems_data, after=after, subset_cols=subset_cols, n_nearest_features=15, preimpute_covariates_limit=1)
+
+    # Check that there are no missing values after the cutoff date
+    assert df_imputed.isnull().sum().sum() < pems_data.isnull().sum().sum()

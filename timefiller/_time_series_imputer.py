@@ -350,7 +350,33 @@ class TimeSeriesImputer:
         else:
             return list(X_.columns)
 
-    def __call__(self, X, subset_cols=None, before=None, after=None, n_nearest_features=None) -> pd.DataFrame:
+    @staticmethod
+    def interpolate_small_gaps(df, n):
+        """
+        Interpole les séries de valeurs manquantes (NaN) dans un dataframe Pandas,
+        mais uniquement pour les trous de longueur n ou moins.
+
+        Parameters:
+            df (pd.DataFrame): Le dataframe contenant des valeurs manquantes.
+            n (int): La longueur maximale des trous à interpeler.
+
+        Returns:
+            pd.DataFrame: Le dataframe avec les petits trous interpolés.
+        """
+        def interpolate_series_with_limit(series):
+            # Trouver les indices des NaN
+            is_nan = series.isna()
+            # Identifier les groupes de NaN
+            gaps = (is_nan != is_nan.shift()).cumsum()
+            # Filtrer les groupes ayant une longueur <= n
+            mask = series.groupby(gaps).transform('size') <= n
+            # Interpoler uniquement sur les trous courts
+            return series.interpolate().where(mask, series)
+
+        # Appliquer la fonction à chaque colonne du dataframe
+        return df.apply(interpolate_series_with_limit, axis=0)
+
+    def __call__(self, X, subset_cols=None, before=None, after=None, n_nearest_features=None, preimpute_covariates_limit=None) -> pd.DataFrame:
         """
         Imputes missing values in a time series DataFrame.
 
@@ -364,7 +390,9 @@ class TimeSeriesImputer:
                 to select. The selection is randomized : covariates highly-correlated are
                 more likely to be selected ; covariates wich are not likely to be available when the
                 imputed columns is are not likely selected. If None, uses all available features.
-
+            preimpute_covariates_limit (int, optional): Fast linear interpolation of covariates before
+                imputation of one column. The idea is to limit the number of calls to the Optimask solver
+                as well as the chosen regressor. Values larger than a few units are not advised. Default is None.
         Returns:
             pd.DataFrame or (pd.DataFrame, dict): Imputed data and, if alpha is
             defined, a dictionary containing uncertainties for each column.
@@ -393,10 +421,14 @@ class TimeSeriesImputer:
             col = columns[index_col]
             if X_[col].isnull().mean() > 0:
                 cols_in = self._select_imputation_features(X_, col, n_nearest_features, rng)
+                X_col = X_[cols_in]
+                if isinstance(preimpute_covariates_limit, int):
+                    covariates = [_ for _ in cols_in if _ != col]
+                    X_col[covariates] = self.interpolate_small_gaps(df=X_col[covariates], n=preimpute_covariates_limit)
                 if self.imputer.alpha is None:
-                    ret.append(self._impute_col(x=X_[cols_in], col=col, subset_rows=subset_rows))
+                    ret.append(self._impute_col(x=X_col, col=col, subset_rows=subset_rows))
                 else:
-                    imputed_col, uncertainties_col = self._impute_col(x=X_[cols_in], col=col, subset_rows=subset_rows)
+                    imputed_col, uncertainties_col = self._impute_col(x=X_col, col=col, subset_rows=subset_rows)
                     ret.append(imputed_col)
                     uncertainties[col] = uncertainties_col
         ret = pd.concat(ret, axis=1).reindex_like(X).combine_first(X)
