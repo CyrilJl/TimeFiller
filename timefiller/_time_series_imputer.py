@@ -351,29 +351,23 @@ class TimeSeriesImputer:
             return list(X_.columns)
 
     @staticmethod
-    def interpolate_small_gaps(df, n):
+    def interpolate_small_gaps(df: pd.DataFrame, n: int) -> pd.DataFrame:
         """
-        Interpole les séries de valeurs manquantes (NaN) dans un dataframe Pandas,
-        mais uniquement pour les trous de longueur n ou moins.
+        Interpolates series of missing values (NaN) in a Pandas DataFrame,
+        but only for gaps of length n or less.
 
         Parameters:
-            df (pd.DataFrame): Le dataframe contenant des valeurs manquantes.
-            n (int): La longueur maximale des trous à interpeler.
+            df (pd.DataFrame): The DataFrame containing missing values.
+            n (int): The maximum length of gaps to interpolate.
 
         Returns:
-            pd.DataFrame: Le dataframe avec les petits trous interpolés.
+            pd.DataFrame: The DataFrame with small gaps interpolated.
         """
         def interpolate_series_with_limit(series):
-            # Trouver les indices des NaN
             is_nan = series.isna()
-            # Identifier les groupes de NaN
             gaps = (is_nan != is_nan.shift()).cumsum()
-            # Filtrer les groupes ayant une longueur <= n
             mask = series.groupby(gaps).transform('size') <= n
-            # Interpoler uniquement sur les trous courts
             return series.interpolate().where(mask, series)
-
-        # Appliquer la fonction à chaque colonne du dataframe
         return df.apply(interpolate_series_with_limit, axis=0)
 
     def __call__(self, X, subset_cols=None, before=None, after=None, n_nearest_features=None, preimpute_covariates_limit=None) -> pd.DataFrame:
