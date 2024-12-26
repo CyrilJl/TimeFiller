@@ -415,7 +415,7 @@ class TimeSeriesImputer:
             col = columns[index_col]
             if X_[col].isnull().mean() > 0:
                 cols_in = self._select_imputation_features(X_, col, n_nearest_features, rng)
-                X_col = X_[cols_in]
+                X_col = X_[cols_in].copy()
                 if isinstance(preimpute_covariates_limit, int):
                     covariates = [_ for _ in cols_in if _ != col]
                     X_col[covariates] = self.interpolate_small_gaps(df=X_col[covariates], n=preimpute_covariates_limit)
