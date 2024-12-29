@@ -115,6 +115,8 @@ class TimeSeriesImputer:
         Returns:
             list or None: List of lags or None if not specified.
         """
+        if ar_lags == 'auto':
+            return 'auto'
         if isinstance(ar_lags, int):
             return list(range(-abs(ar_lags), 0)) + list(range(1, abs(ar_lags)+1))
         if isinstance(ar_lags, (list, tuple, np.ndarray)):
@@ -294,12 +296,7 @@ class TimeSeriesImputer:
         if isinstance(self.multivariate_lags, int) or self.multivariate_lags == 'auto':
             x = self.find_best_lags(x, col, self.multivariate_lags)
         if self.ar_lags is not None:
-            x_ar = []
-            for k in sorted(self.ar_lags):
-                x_ar.append(x[col].shift(k).rename(f"{col}{k:+d}"))
-                if self.negative_ar:
-                    x_ar.append(-x[col].shift(k).rename(f"{col}{k:+d}_neg"))
-            x = pd.concat([x, pd.concat(x_ar, axis=1)], axis=1)
+            x = self.add_ar_lags(x, col)
         index_col = x.columns.get_loc(col)
         if self.imputer.alpha is None:
             x_col_imputed = self.imputer(x.values, subset_rows=subset_rows, subset_cols=index_col)[:, index_col]
@@ -311,6 +308,45 @@ class TimeSeriesImputer:
             alphas = sorted(sum([[a/2, 1-a/2] for a in self.imputer.alpha], []))
             return (pd.Series(x_imputed_col, name=col, index=x.index),
                     pd.concat([pd.Series(_, index=x.index, name=alpha) for _, alpha in zip(uncertainties_col, alphas)], axis=1))
+
+    @classmethod
+    def select_ar_lags(cls, x, n):
+        lags, acf = cls.cross_correlation(x, x, max_lags=int(0.05*len(x)))
+        acf = acf[lags > 0]
+        if n <= 0 or n > len(acf):
+            raise ValueError("n doit être compris entre 1 et la taille de acf.")
+
+        # Initialisation : sélectionner le lag avec la corrélation maximale
+        selected_lags = [np.argmax(acf)]  # Premier lag choisi (indice de la corrélation max)
+
+        # Itératif pour choisir les autres lags
+        for _ in range(1, n):
+            remaining_lags = [i for i in range(len(acf)) if i not in selected_lags]
+
+            # Calcul d'une métrique combinant corrélation et diversité
+            def score(lag):
+                # Diversité = distance minimale aux lags déjà sélectionnés
+                min_distance = min(abs(lag - s) for s in selected_lags)
+                return acf[lag] * min_distance  # Pondération corrélation * diversité
+
+            # Sélectionner le lag ayant le meilleur score
+            best_lag = max(remaining_lags, key=score)
+            selected_lags.append(best_lag)
+
+        return sorted(selected_lags)
+
+    def add_ar_lags(self, x, col):
+        if self.ar_lags == 'auto':
+            ar_lags = self.select_ar_lags(x[col].values, n=5)
+        else:
+            ar_lags = self.ar_lags
+        x_ar = []
+        for k in sorted(ar_lags):
+            x_ar.append(x[col].shift(k).rename(f"{col}{k:+d}"))
+            if self.negative_ar:
+                x_ar.append(-x[col].shift(k).rename(f"{col}{k:+d}_neg"))
+        x = pd.concat([x, pd.concat(x_ar, axis=1)], axis=1)
+        return x
 
     def _preprocess_data(self, X):
         """
@@ -370,7 +406,7 @@ class TimeSeriesImputer:
             return series.interpolate().where(mask, series)
         return df.apply(interpolate_series_with_limit, axis=0)
 
-    def __call__(self, X, subset_cols=None, before=None, after=None, n_nearest_features=None, preimpute_covariates_limit=None) -> pd.DataFrame:
+    def __call__(self, X, subset_cols=None, before=None, after=None, n_nearest_covariates=35, preimpute_covariates_limit=1) -> pd.DataFrame:
         """
         Imputes missing values in a time series DataFrame.
 
@@ -380,13 +416,14 @@ class TimeSeriesImputer:
                 for all columns.
             before (str, optional): Upper date limit for row selection.
             after (str, optional): Lower date limit for row selection.
-            n_nearest_features (int, optional): Number of most relevant features
-                to select. The selection is randomized : covariates highly-correlated are
-                more likely to be selected ; covariates wich are not likely to be available when the
-                imputed columns is are not likely selected. If None, uses all available features.
+            n_nearest_covariates (int, optional): Number of most relevant covariates
+                to select for the imputation of a column. The selection is randomized : covariates
+                highly-correlated are more likely to be selected ; covariates wich are not likely to be
+                available when the imputed columns is are not likely selected. If None, uses all available
+                features. Defaults to 35.
             preimpute_covariates_limit (int, optional): Fast linear interpolation of covariates before
                 imputation of one column. The idea is to limit the number of calls to the Optimask solver
-                as well as the chosen regressor. Values larger than a few units are not advised. Default is None.
+                as well as the chosen regressor. Values larger than a few units are not advised. Default is 1.
         Returns:
             pd.DataFrame or (pd.DataFrame, dict): Imputed data and, if alpha is
             defined, a dictionary containing uncertainties for each column.
@@ -414,7 +451,7 @@ class TimeSeriesImputer:
         for index_col in tqdm(subset_cols, disable=(not self.verbose)):
             col = columns[index_col]
             if X_[col].isnull().mean() > 0:
-                cols_in = self._select_imputation_features(X_, col, n_nearest_features, rng)
+                cols_in = self._select_imputation_features(X_, col, n_nearest_covariates, rng)
                 X_col = X_[cols_in].copy()
                 if isinstance(preimpute_covariates_limit, int):
                     covariates = [_ for _ in cols_in if _ != col]
