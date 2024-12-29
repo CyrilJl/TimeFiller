@@ -14,6 +14,13 @@ def pems_data():
     return df_with_nan
 
 
+def impute_and_assert(tsi, data, after=None, subset_cols=None, **kwargs):
+    """Helper function to perform imputation and check results."""
+    imputed_data = tsi(data, after=after, subset_cols=subset_cols, **kwargs)
+    assert imputed_data.isnull().sum().sum() < data.isnull().sum().sum()
+    return imputed_data
+
+
 def test_impute_multivariate():
     n = 50
     mean = np.random.randn(n)
@@ -25,54 +32,28 @@ def test_impute_multivariate():
     assert np.isnan(X_imputed).sum() == 0
 
 
-def test_tsi(pems_data):
+@pytest.mark.parametrize("ar_lags, multivariate_lags, n_nearest_covariates", [
+    ((1, 2, 3, 6), None, None),
+    ((1, 2, 3, 6), 12, None),
+    ('auto', None, 15)
+])
+def test_tsi_variants(pems_data, ar_lags, multivariate_lags, n_nearest_covariates):
+    tsi = TimeSeriesImputer(ar_lags=ar_lags, multivariate_lags=multivariate_lags)
+
+    after = '2017-05-01'
+    subset_cols = pems_data.sample(n=3, axis=1).columns if ar_lags != 'auto' else pems_data.sample(n=2, axis=1).columns
+
+    # Perform imputation and assert no missing values
+    impute_and_assert(
+        tsi,
+        pems_data,
+        after=after,
+        subset_cols=subset_cols,
+        n_nearest_covariates=n_nearest_covariates
+    )
+
+
+def test_tsi_full(pems_data):
     """Test imputation on the full time series."""
     tsi = TimeSeriesImputer()
-
-    # Perform imputation on the entire dataset
-    df_imputed = tsi(pems_data.sample(n=10, axis=1))
-
-    # Check that there are no more missing values after imputation
-    assert df_imputed.isnull().sum().sum() < pems_data.isnull().sum().sum()
-
-
-def test_tsi_ar_lags(pems_data):
-    tsi = TimeSeriesImputer(ar_lags=(1, 2, 3, 6))
-
-    # Define the cutoff date for imputation
-    after = '2017-05-01'
-    subset_cols = pems_data.sample(n=3, axis=1).columns
-
-    # Perform imputation only after the cutoff date
-    df_imputed = tsi(pems_data, after=after, subset_cols=subset_cols)
-
-    # Check that there are no missing values after the cutoff date
-    assert df_imputed.isnull().sum().sum() < pems_data.isnull().sum().sum()
-
-
-def test_tsi_multivariate_lags(pems_data):
-    tsi = TimeSeriesImputer(ar_lags=(1, 2, 3, 6), multivariate_lags=12)
-
-    # Define the cutoff date for imputation
-    after = '2017-05-01'
-    subset_cols = pems_data.sample(n=3, axis=1).columns
-
-    # Perform imputation only after the cutoff date
-    df_imputed = tsi(pems_data, after=after, subset_cols=subset_cols)
-
-    # Check that there are no missing values after the cutoff date
-    assert df_imputed.isnull().sum().sum() < pems_data.isnull().sum().sum()
-
-
-def test_impute_ar_lags_auto(pems_data):
-    tsi = TimeSeriesImputer(ar_lags='auto')
-
-    # Define the cutoff date for imputation
-    after = '2017-05-01'
-    subset_cols = pems_data.sample(n=2, axis=1).columns
-
-    # Perform imputation only after the cutoff date
-    df_imputed = tsi(pems_data, after=after, subset_cols=subset_cols, n_nearest_covariates=15, preimpute_covariates_limit=1)
-
-    # Check that there are no missing values after the cutoff date
-    assert df_imputed.isnull().sum().sum() < pems_data.isnull().sum().sum()
+    impute_and_assert(tsi, pems_data.sample(n=10, axis=1))
