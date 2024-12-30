@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.base import TransformerMixin
 
-__all__ = ['PositiveOutput']
+__all__ = ["PositiveOutput"]
 
 
 class PositiveOutput(TransformerMixin):
@@ -10,13 +10,13 @@ class PositiveOutput(TransformerMixin):
     A transformer that applies negative expansion to data based on a threshold.
 
     Args:
-        q (float, optional): The quantile used as a threshold for expansion. Default is `10`, 
-            which means the 10th percentile is used as the threshold. If `v` is provided, 
+        q (float, optional): The quantile used as a threshold for expansion. Default is `10`,
+            which means the 10th percentile is used as the threshold. If `v` is provided,
             `q` is ignored.
-        v (float, optional): A fixed value used as a threshold for negative expansion. 
-            If provided, this threshold will be used for all features. Default is `None`, 
+        v (float, optional): A fixed value used as a threshold for negative expansion.
+            If provided, this threshold will be used for all features. Default is `None`,
             which means the threshold is automatically calculated from the data.
-        columns (list, optional): List of column names to process if the input is a DataFrame. 
+        columns (list, optional): List of column names to process if the input is a DataFrame.
             If `None`, all columns will be processed. Default is `None`.
 
     Raises:

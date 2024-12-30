@@ -24,14 +24,14 @@ class TimeSeriesImputer:
         alpha=None,
         preprocessing=None,
         ar_lags=None,
-        multivariate_lags='auto',
+        multivariate_lags="auto",
         na_frac_max=0.33,
         min_samples_train=50,
         weighting_func=None,
         optimask_n_tries=1,
         negative_ar=False,
         random_state=None,
-        verbose=0
+        verbose=0,
     ):
         """
         Initializes the imputer for time series.
@@ -74,7 +74,7 @@ class TimeSeriesImputer:
             min_samples_train=min_samples_train,
             weighting_func=weighting_func,
             optimask_n_tries=optimask_n_tries,
-            verbose=verbose
+            verbose=verbose,
         )
         self.preprocessing = self._get_preprocessing(preprocessing)
         self.ar_lags = self._process_lags(ar_lags)
@@ -115,10 +115,10 @@ class TimeSeriesImputer:
         Returns:
             list or None: List of lags or None if not specified.
         """
-        if ar_lags == 'auto':
-            return 'auto'
+        if ar_lags == "auto":
+            return "auto"
         if isinstance(ar_lags, int):
-            return list(range(-abs(ar_lags), 0)) + list(range(1, abs(ar_lags)+1))
+            return list(range(-abs(ar_lags), 0)) + list(range(1, abs(ar_lags) + 1))
         if isinstance(ar_lags, (list, tuple, np.ndarray)):
             return sorted(set([k for k in ar_lags if k != 0]))
         return None
@@ -140,11 +140,13 @@ class TimeSeriesImputer:
         """
         x = data.fillna(data.mean())
         s1 = r_regression(X=x.drop(columns=col), y=x[col])
-        s2 = ((~data[col].isnull()).astype(float).values @ (~data.drop(columns=col).isnull()).astype(float).values) / len(data)
+        s2 = (
+            (~data[col].isnull()).astype(float).values @ (~data.drop(columns=col).isnull()).astype(float).values
+        ) / len(data)
         p = np.sqrt(abs(s1) * s2)
         size = min(n_nearest_features, len(s1), len(p[p > 0]))
         cols_to_sample = list(data.drop(columns=col).columns)
-        return list(rng.choice(a=cols_to_sample, size=size, p=p/p.sum(), replace=False))
+        return list(rng.choice(a=cols_to_sample, size=size, p=p / p.sum(), replace=False))
 
     @staticmethod
     @njit(parallel=True, boundscheck=False)
@@ -164,25 +166,25 @@ class TimeSeriesImputer:
         """
         n = len(s1)
         cross_corr = np.zeros(2 * max_lags + 1, dtype=np.float32)
-        lags = np.arange(-max_lags, max_lags+1)
+        lags = np.arange(-max_lags, max_lags + 1)
         for k in prange(len(lags)):
             lag = lags[k]
-            m1, m2, v1, v2, cov = 0., 0., 0., 0., 0.
+            m1, m2, v1, v2, cov = 0.0, 0.0, 0.0, 0.0, 0.0
             count = 0
             for i in range(n):
                 j = i + lag
                 s1i, s2j = s1[i], s2[j]
                 if (j >= 0) and (j < n) and np.isfinite(s1i) and np.isfinite(s2j):
-                    m1u = (count*m1 + s1i)/(count+1)
-                    m2u = (count*m2 + s2j)/(count+1)
+                    m1u = (count * m1 + s1i) / (count + 1)
+                    m2u = (count * m2 + s2j) / (count + 1)
                     if count != 0:
-                        v1 = ((count - 1)*v1 + (s1i-m1)*(s1i-m1u))/(count)
-                        v2 = ((count - 1)*v2 + (s2j-m2)*(s2j-m2u))/(count)
-                        cov += (s1i - m1u)*(s2j-m2)/count
-                        cov *= (count/(1+count))
+                        v1 = ((count - 1) * v1 + (s1i - m1) * (s1i - m1u)) / (count)
+                        v2 = ((count - 1) * v2 + (s2j - m2) * (s2j - m2u)) / (count)
+                        cov += (s1i - m1u) * (s2j - m2) / count
+                        cov *= count / (1 + count)
                     count += 1
                     m1, m2 = m1u, m2u
-            cross_corr[lag+max_lags] = count/(count-1)*cov/np.sqrt(v1*v2)
+            cross_corr[lag + max_lags] = count / (count - 1) * cov / np.sqrt(v1 * v2)
         return lags, cross_corr
 
     @classmethod
@@ -200,7 +202,7 @@ class TimeSeriesImputer:
         """
         if len(s1) != len(s2):
             raise ValueError("The length of s1 and s2 must be the same.")
-        if max_lags == 'auto':
+        if max_lags == "auto":
             max_lags = int(0.05 * len(s1))
         lags, cc = cls.cross_correlation(s1=s1.values, s2=s2.values, max_lags=max_lags)
         ret, cc0 = [0], cc[max_lags]
@@ -291,7 +293,7 @@ class TimeSeriesImputer:
             pd.Series or (pd.Series, pd.DataFrame): Imputed series and optionally a
             DataFrame of uncertainties if alpha is defined.
         """
-        if isinstance(self.multivariate_lags, int) or self.multivariate_lags == 'auto':
+        if isinstance(self.multivariate_lags, int) or self.multivariate_lags == "auto":
             x = self.find_best_lags(x, col, self.multivariate_lags)
         if self.ar_lags is not None:
             x = self.add_ar_lags(x, col)
@@ -303,12 +305,16 @@ class TimeSeriesImputer:
             x_imputed, uncertainties = self.imputer(x.values, subset_rows=subset_rows, subset_cols=index_col)
             x_imputed_col = x_imputed[:, index_col]
             uncertainties_col = uncertainties[:, :, index_col]
-            alphas = sorted(sum([[a/2, 1-a/2] for a in self.imputer.alpha], []))
-            return (pd.Series(x_imputed_col, name=col, index=x.index),
-                    pd.concat([pd.Series(_, index=x.index, name=alpha) for _, alpha in zip(uncertainties_col, alphas)], axis=1))
+            alphas = sorted(sum([[a / 2, 1 - a / 2] for a in self.imputer.alpha], []))
+            return (
+                pd.Series(x_imputed_col, name=col, index=x.index),
+                pd.concat(
+                    [pd.Series(_, index=x.index, name=alpha) for _, alpha in zip(uncertainties_col, alphas)], axis=1
+                ),
+            )
 
     def add_ar_lags(self, x, col):
-        if self.ar_lags == 'auto':
+        if self.ar_lags == "auto":
             raise NotImplementedError
         else:
             ar_lags = self.ar_lags
@@ -371,14 +377,24 @@ class TimeSeriesImputer:
         Returns:
             pd.DataFrame: The DataFrame with small gaps interpolated.
         """
+
         def interpolate_series_with_limit(series):
             is_nan = series.isna()
             gaps = (is_nan != is_nan.shift()).cumsum()
-            mask = series.groupby(gaps).transform('size') <= n
+            mask = series.groupby(gaps).transform("size") <= n
             return series.interpolate().where(mask, series)
+
         return df.apply(interpolate_series_with_limit, axis=0)
 
-    def __call__(self, X, subset_cols=None, before=None, after=None, n_nearest_covariates=35, preimpute_covariates_limit=1) -> pd.DataFrame:
+    def __call__(
+        self,
+        X,
+        subset_cols=None,
+        before=None,
+        after=None,
+        n_nearest_covariates=35,
+        preimpute_covariates_limit=1,
+    ) -> pd.DataFrame:
         """
         Imputes missing values in a time series DataFrame.
 
@@ -442,7 +458,12 @@ class TimeSeriesImputer:
         if self.imputer.alpha is None:
             return ret
         else:
-            for col in uncertainties:
-                df = uncertainties[col]
-                uncertainties[col] = pd.DataFrame(self.preprocessing.inverse_transform(df), columns=df.columns, index=df.index)
+            alphas = sorted(sum([[a / 2, 1 - a / 2] for a in self.imputer.alpha], []))
+            uncertainties = {
+                alpha: pd.concat([uncertainties[col][alpha].rename(col) for col in uncertainties], axis=1)
+                for alpha in alphas
+            }
+            for alpha in uncertainties:
+                df = uncertainties[alpha].reindex_like(X)
+                uncertainties[alpha] = self.preprocessing.inverse_transform(df)
             return ret, uncertainties

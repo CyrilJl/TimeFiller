@@ -32,25 +32,18 @@ def test_impute_multivariate():
     assert np.isnan(X_imputed).sum() == 0
 
 
-@pytest.mark.parametrize("ar_lags, multivariate_lags, n_nearest_covariates", [
-    ((1, 2, 3, 6), None, None),
-    ((1, 2, 3, 6), 12, None),
-    ('auto', None, 15)
-])
+@pytest.mark.parametrize(
+    "ar_lags, multivariate_lags, n_nearest_covariates",
+    [((1, 2, 3, 6), None, None), ((1, 2, 3, 6), 12, None), ("auto", None, 15)],
+)
 def test_tsi_variants(pems_data, ar_lags, multivariate_lags, n_nearest_covariates):
     tsi = TimeSeriesImputer(ar_lags=ar_lags, multivariate_lags=multivariate_lags)
 
-    after = '2017-05-01'
+    after = "2017-05-01"
     subset_cols = pems_data.sample(n=3, axis=1).columns
 
     # Perform imputation and assert no missing values
-    impute_and_assert(
-        tsi,
-        pems_data,
-        after=after,
-        subset_cols=subset_cols,
-        n_nearest_covariates=n_nearest_covariates
-    )
+    impute_and_assert(tsi, pems_data, after=after, subset_cols=subset_cols, n_nearest_covariates=n_nearest_covariates)
 
 
 def test_tsi_full(pems_data):
@@ -62,5 +55,6 @@ def test_tsi_full(pems_data):
 def test_tsi_mapie_uncertainties(pems_data):
     """Test imputation on the full time series."""
     subset_cols = pems_data.sample(n=2, axis=1).columns
+    after = "2017-05-01"
     tsi = TimeSeriesImputer(alpha=0.2)
-    tsi(pems_data, subset_cols=subset_cols)
+    tsi(pems_data, after=after, subset_cols=subset_cols)

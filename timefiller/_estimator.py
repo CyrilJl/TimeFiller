@@ -6,8 +6,8 @@ class FastRidge:
     """
     Ridge Regression implementation with adaptive regularization.
 
-    This implementation avoids the overhead of scikit-learn by providing a custom 
-    Ridge Regression solution. Instead of a constant regularization term 
+    This implementation avoids the overhead of scikit-learn by providing a custom
+    Ridge Regression solution. Instead of a constant regularization term
     (alpha * I), it uses an adaptive regularization term (alpha * diag(X @ X.T)).
 
     Attributes:
@@ -32,7 +32,7 @@ class FastRidge:
         self.regularization = regularization
 
     def get_params(self, deep=True):
-        return {'regularization': self.regularization}
+        return {"regularization": self.regularization}
 
     def fit(self, X, y, sample_weight=None):
         """

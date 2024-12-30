@@ -26,7 +26,7 @@ class ImputeMultiVariate:
         weighting_func=None,
         optimask_n_tries=1,
         random_state=None,
-        verbose=0
+        verbose=0,
     ):
         """
         Initialize the multivariate imputer.
@@ -74,7 +74,13 @@ class ImputeMultiVariate:
         Raises:
             TypeError: If the estimator does not have `fit` and `predict` methods.
         """
-        return FastRidge() if estimator is None else estimator if hasattr(estimator, 'fit') and hasattr(estimator, 'predict') else InvalidEstimatorError()
+        return (
+            FastRidge()
+            if estimator is None
+            else estimator
+            if hasattr(estimator, "fit") and hasattr(estimator, "predict")
+            else InvalidEstimatorError()
+        )
 
     @staticmethod
     def _process_subset(X, subset, axis):
@@ -94,7 +100,9 @@ class ImputeMultiVariate:
         """
         n = X.shape[axis]
         check_params(subset, types=(int, list, np.ndarray, tuple, type(None)))
-        return list(range(n)) if subset is None else [subset] if isinstance(subset, int) and subset < n else sorted(subset)
+        return (
+            list(range(n)) if subset is None else [subset] if isinstance(subset, int) and subset < n else sorted(subset)
+        )
 
     @classmethod
     def _prepare_data(cls, mask_nan, col_to_impute, subset_rows):
@@ -114,7 +122,9 @@ class ImputeMultiVariate:
         rows_to_impute = np.flatnonzero(mask_nan[:, col_to_impute] & ~mask_nan.all(axis=1))
         rows_to_impute = np.intersect1d(ar1=rows_to_impute, ar2=subset_rows)
         other_cols = np.setdiff1d(ar1=np.arange(mask_nan.shape[1]), ar2=[col_to_impute])
-        patterns, indexes = np.unique(~cls._subset(X=mask_nan, rows=rows_to_impute, columns=other_cols), return_inverse=True, axis=0)
+        patterns, indexes = np.unique(
+            ~cls._subset(X=mask_nan, rows=rows_to_impute, columns=other_cols), return_inverse=True, axis=0
+        )
         index_predict = [rows_to_impute[indexes == k] for k in range(len(patterns))]
         columns = [other_cols[pattern] for pattern in patterns]
         return index_predict, columns
@@ -188,7 +198,13 @@ class ImputeMultiVariate:
         trainable_rows = np.flatnonzero(~mask_nan[:, col_to_impute])
         rows, cols = self.optimask.solve(self._subset(X, trainable_rows, columns))
         selected_rows, selected_cols = trainable_rows[rows], columns[cols]
-        X_train, y_train, X_pred = self._split(X=X, index_predict=index_predict, selected_rows=selected_rows, selected_cols=selected_cols, col_to_impute=col_to_impute)
+        X_train, y_train, X_pred = self._split(
+            X=X,
+            index_predict=index_predict,
+            selected_rows=selected_rows,
+            selected_cols=selected_cols,
+            col_to_impute=col_to_impute,
+        )
         return X_train, y_train, X_pred, selected_rows, selected_cols
 
     def _perform_imputation(self, X_train, y_train, X_predict, selected_rows):
@@ -229,17 +245,22 @@ class ImputeMultiVariate:
             if self.alpha is defined.
         """
         imputation, mask_nan = X.copy(), np.isnan(X)
-        uncertainties = np.full((2*len(self.alpha),) + imputation.shape, np.nan) if self.alpha else None
-        imputable_cols = np.intersect1d(np.flatnonzero((0 < mask_nan[subset_rows].sum(axis=0)) & (mask_nan.mean(axis=0) <= self.na_frac_max)), subset_cols)
+        uncertainties = np.full((2 * len(self.alpha),) + imputation.shape, np.nan) if self.alpha else None
+        imputable_cols = np.intersect1d(
+            np.flatnonzero((0 < mask_nan[subset_rows].sum(axis=0)) & (mask_nan.mean(axis=0) <= self.na_frac_max)),
+            subset_cols,
+        )
         for col_to_impute in tqdm(imputable_cols, disable=(self.verbose < 1)):
             index_predict, columns = self._prepare_data(mask_nan, col_to_impute, subset_rows)
             for cols, index in zip(columns, index_predict):
-                X_train, y_train, X_predict, selected_rows, _ = self._prepare_train_and_pred_data(X, mask_nan, cols, col_to_impute, index)
+                X_train, y_train, X_predict, selected_rows, _ = self._prepare_train_and_pred_data(
+                    X, mask_nan, cols, col_to_impute, index
+                )
                 if len(X_train) >= self.min_samples_train:
                     pred_result = self._perform_imputation(X_train, y_train, X_predict, selected_rows)
                     if self.alpha:
                         imputation[index, col_to_impute], s = pred_result
-                        uncertainties[:, index, col_to_impute] = np.sort(s.reshape(-1, 2*len(self.alpha)), axis=1).T
+                        uncertainties[:, index, col_to_impute] = np.sort(s.reshape(-1, 2 * len(self.alpha)), axis=1).T
                     else:
                         imputation[index, col_to_impute] = pred_result
         return (imputation, uncertainties) if self.alpha else imputation
@@ -257,7 +278,7 @@ class ImputeMultiVariate:
             np.ndarray or tuple: Imputed array and optionally uncertainties.
         """
         check_params(X, types=np.ndarray)
-        check_params(X.dtype.kind, params=('i', 'f'))
+        check_params(X.dtype.kind, params=("i", "f"))
         subset_rows = self._process_subset(X=X, subset=subset_rows, axis=0)
         subset_cols = self._process_subset(X=X, subset=subset_cols, axis=1)
         return self._impute(X=X, subset_rows=subset_rows, subset_cols=subset_cols)

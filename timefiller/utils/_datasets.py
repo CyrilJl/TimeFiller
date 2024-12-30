@@ -14,7 +14,7 @@ def fetch_pems_bay(data_home=None) -> pd.DataFrame:
     https://zenodo.org/records/5724362/files/PEMS-BAY.csv
 
     Args:
-        data_home (str, optional): Directory where the dataset should be saved. 
+        data_home (str, optional): Directory where the dataset should be saved.
             If None, defaults to '~/timefiller_data'.
 
     Returns:
@@ -28,7 +28,7 @@ def fetch_pems_bay(data_home=None) -> pd.DataFrame:
         data_home = expanduser("~/timefiller_data")
 
     # Define the filename and path to the dataset
-    filename = 'pems-bay.csv'
+    filename = "pems-bay.csv"
     file_path = join(data_home, filename)
 
     # Ensure the directory exists, if not create it
@@ -37,9 +37,9 @@ def fetch_pems_bay(data_home=None) -> pd.DataFrame:
 
     # Download the dataset if it doesn't already exist locally
     if not exists(file_path):
-        url = 'https://zenodo.org/records/5724362/files/PEMS-BAY.csv'
-        df = pd.read_csv(url, index_col=0).rename_axis(index='time', columns='sensor_id')
+        url = "https://zenodo.org/records/5724362/files/PEMS-BAY.csv"
+        df = pd.read_csv(url, index_col=0).rename_axis(index="time", columns="sensor_id")
         df.to_csv(file_path)
 
     # Load the dataset from the local file
-    return pd.read_csv(file_path, index_col='time', parse_dates=['time']).asfreq('5min')
+    return pd.read_csv(file_path, index_col="time", parse_dates=["time"]).asfreq("5min")
