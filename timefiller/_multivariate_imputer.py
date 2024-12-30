@@ -2,9 +2,9 @@ import numpy as np
 from mapie.regression import MapieRegressor
 from numba import njit, prange
 from optimask import OptiMask
-from sklearn.linear_model import Ridge
 from tqdm.auto import tqdm
 
+from ._estimator import FastRidge
 from ._misc import InvalidEstimatorError, check_params
 
 
@@ -74,7 +74,7 @@ class ImputeMultiVariate:
         Raises:
             TypeError: If the estimator does not have `fit` and `predict` methods.
         """
-        return Ridge(alpha=1e-3) if estimator is None else estimator if hasattr(estimator, 'fit') and hasattr(estimator, 'predict') else InvalidEstimatorError()
+        return FastRidge() if estimator is None else estimator if hasattr(estimator, 'fit') and hasattr(estimator, 'predict') else InvalidEstimatorError()
 
     @staticmethod
     def _process_subset(X, subset, axis):
