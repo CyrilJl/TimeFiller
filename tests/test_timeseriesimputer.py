@@ -63,4 +63,4 @@ def test_tsi_mapie_uncertainties(pems_data):
     """Test imputation on the full time series."""
     subset_cols = pems_data.sample(n=3, axis=1).columns
     tsi = TimeSeriesImputer(alpha=0.2)
-    tsi(data, after=after, subset_cols=subset_cols)
+    tsi(pems_data, after=after, subset_cols=subset_cols)
