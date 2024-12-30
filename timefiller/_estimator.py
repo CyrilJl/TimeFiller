@@ -31,7 +31,7 @@ class FastRidge:
         """
         self.regularization = regularization
 
-    def fit(self, X, y):
+    def fit(self, X, y, sample_weight=None):
         """
         Fits the Ridge Regression model to the input data.
 
