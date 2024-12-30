@@ -307,35 +307,9 @@ class TimeSeriesImputer:
             return (pd.Series(x_imputed_col, name=col, index=x.index),
                     pd.concat([pd.Series(_, index=x.index, name=alpha) for _, alpha in zip(uncertainties_col, alphas)], axis=1))
 
-    @classmethod
-    def select_ar_lags(cls, x, n):
-        lags, acf = cls.cross_correlation(x, x, max_lags=int(0.05*len(x)))
-        acf = acf[lags > 0]
-        if n <= 0 or n > len(acf):
-            raise ValueError("n doit être compris entre 1 et la taille de acf.")
-
-        # Initialisation : sélectionner le lag avec la corrélation maximale
-        selected_lags = [np.argmax(acf)]  # Premier lag choisi (indice de la corrélation max)
-
-        # Itératif pour choisir les autres lags
-        for _ in range(1, n):
-            remaining_lags = [i for i in range(len(acf)) if i not in selected_lags]
-
-            # Calcul d'une métrique combinant corrélation et diversité
-            def score(lag):
-                # Diversité = distance minimale aux lags déjà sélectionnés
-                min_distance = min(abs(lag - s) for s in selected_lags)
-                return acf[lag] * min_distance  # Pondération corrélation * diversité
-
-            # Sélectionner le lag ayant le meilleur score
-            best_lag = max(remaining_lags, key=score)
-            selected_lags.append(best_lag)
-
-        return sorted(selected_lags)
-
     def add_ar_lags(self, x, col):
         if self.ar_lags == 'auto':
-            ar_lags = self.select_ar_lags(x[col].values, n=5)
+            raise NotImplementedError
         else:
             ar_lags = self.ar_lags
         x_ar = []
