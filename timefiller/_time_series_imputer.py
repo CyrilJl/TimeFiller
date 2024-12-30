@@ -153,9 +153,10 @@ class TimeSeriesImputer:
         Computes cross-correlation between two series with lags.
         Equivalent to [pd.Series(s1).corr(pd.Series(s2.shift(lag))) for lag in range(-max_lags, max_lags+1)],
         but much faster: NaNs are taken into account, and the function uses Numba plus the Welford algorithm.
+        Also slightly faster than statsmodels.tsa.stattools.ccf, and prevent from depending on statsmodels
         Args:
-            s1 (array): First series.
-            s2 (array): Second series.
+            s1 (array): First numpy array.
+            s2 (array): Second numpy array.
             max_lags (int): Maximum lag to compute.
 
         Returns:
@@ -166,10 +167,8 @@ class TimeSeriesImputer:
         lags = np.arange(-max_lags, max_lags+1)
         for k in prange(len(lags)):
             lag = lags[k]
-            m1, m2 = 0., 0.
-            v1, v2 = 0., 0.
+            m1, m2, v1, v2, cov = 0., 0., 0., 0., 0.
             count = 0
-            cov = 0.
             for i in range(n):
                 j = i + lag
                 s1i, s2j = s1[i], s2[j]
@@ -179,7 +178,6 @@ class TimeSeriesImputer:
                     if count != 0:
                         v1 = ((count - 1)*v1 + (s1i-m1)*(s1i-m1u))/(count)
                         v2 = ((count - 1)*v2 + (s2j-m2)*(s2j-m2u))/(count)
-                    if count != 0:
                         cov += (s1i - m1u)*(s2j-m2)/count
                         cov *= (count/(1+count))
                     count += 1
