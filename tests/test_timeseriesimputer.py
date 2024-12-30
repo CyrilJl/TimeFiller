@@ -34,7 +34,7 @@ def test_impute_multivariate():
 
 @pytest.mark.parametrize(
     "ar_lags, multivariate_lags, n_nearest_covariates",
-    [((1, 2, 3, 6), None, None), ((1, 2, 3, 6), 12, None), ("auto", None, 15)],
+    [((1, 2, 3, 6), None, None), ((1, 2, 3, 6), 12, None), (10, None, 15)],
 )
 def test_tsi_variants(pems_data, ar_lags, multivariate_lags, n_nearest_covariates):
     tsi = TimeSeriesImputer(ar_lags=ar_lags, multivariate_lags=multivariate_lags)
