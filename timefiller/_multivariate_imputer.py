@@ -74,7 +74,7 @@ class ImputeMultiVariate:
         Raises:
             TypeError: If the estimator does not have `fit` and `predict` methods.
         """
-        return Ridge() if estimator is None else estimator if hasattr(estimator, 'fit') and hasattr(estimator, 'predict') else InvalidEstimatorError()
+        return Ridge(alpha=1e-3) if estimator is None else estimator if hasattr(estimator, 'fit') and hasattr(estimator, 'predict') else InvalidEstimatorError()
 
     @staticmethod
     def _process_subset(X, subset, axis):
