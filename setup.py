@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='timefiller',
-    version='0.1.10',
+    version='1.0',
     packages=find_packages(),
     install_requires=['mapie',
                       'numpy',
