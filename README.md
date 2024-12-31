@@ -29,7 +29,20 @@ mamba install timefiller
 
 While there are other Python packages for similar tasks, this one is lightweight with a straightforward and simple API.
 
-## Basic Usage
+## TimeSeriesImputer
+
+The core of `timefiller` is the `TimeSeriesImputer` class is designed for the imputation of multivariate time series data. It extends the capabilities of `ImputeMultiVariate` by accounting for autoregressive and multivariate lags, as well as preprocessing.
+
+### Key Features
+
+- **Autoregressive Lags**: The imputer can handle autoregressive lags, which are specified using the `ar_lags` parameter. This allows the model to use past values of the series to predict missing values.
+- **Multivariate Lags**: The imputer can also handle multivariate lags, specified using the `multivariate_lags` parameter. This allows the model to use lagged values of other series to predict missing values.
+- **Preprocessing**: The imputer supports preprocessing steps, such as scaling or normalization, which can be specified using the `preprocessing` parameter. This ensures that the data is properly prepared before imputation.
+- **Custom Estimators**: The imputer can use any scikit-learn compatible estimator for the imputation process. This allows for flexibility in choosing the best model for the data.
+- **Handling Missing Values**: The imputer can handle missing values in both the target series and the covariates. It uses the `optimask` library to create NaN-free train and predict matrices for the estimator.
+- **Uncertainty Estimation**: If the `alpha` parameter is specified, the imputer can provide uncertainty estimates for the imputed values.
+
+### Basic Usage
 
 The simplest usage example:
 
@@ -41,16 +54,17 @@ tsi = TimeSeriesImputer()
 df_imputed = tsi(X=df)
 ```
 
-## Advanced Usage
+### Advanced Usage
 
 ```python
-from sklearn.linear_model import LassoCV
+from sklearn.linear_model import Lasso
 from timefiller import PositiveOutput, TimeSeriesImputer
 
 df = load_your_dataset()
-tsi = TimeSeriesImputer(estimator=LassoCV(),
+tsi = TimeSeriesImputer(estimator=Lasso(positive=True),
                         ar_lags=(1, 2, 3, 6, 24),
                         multivariate_lags=48,
+                        negative_ar=True,
                         preprocessing=PositiveOutput())
 df_imputed = tsi(X=df,
                  subset_cols=['col_1', 'col_17'],
@@ -60,7 +74,7 @@ df_imputed = tsi(X=df,
 
 Check out the [documentation](https://timefiller.readthedocs.io/en/latest/index.html) for details on available options to customize your imputation.
 
-## Real data example
+### Real data example
 
 Let's evaluate how ``timefiller`` performs on a real-world dataset, the [PeMS-Bay traffic data](https://zenodo.org/records/5724362). A sensor ID is selected for the experiment, and a contiguous block of missing values is introduced. To increase the complexity, additional Missing At Random (MAR) data is simulated, representing 1% of the entire dataset:
 
