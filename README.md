@@ -27,7 +27,7 @@ mamba install timefiller
 
 ## Why this package?
 
-While there are other Python packages for similar tasks, this one is lightweight with a straightforward and simple API. Currently, its speed may be a limitation for large datasets, but it can still be quite useful in many cases.
+While there are other Python packages for similar tasks, this one is lightweight with a straightforward and simple API.
 
 ## Basic Usage
 
@@ -50,12 +50,12 @@ from timefiller import PositiveOutput, TimeSeriesImputer
 df = load_your_dataset()
 tsi = TimeSeriesImputer(estimator=LassoCV(),
                         ar_lags=(1, 2, 3, 6, 24),
-                        multivariate_lags=6,
+                        multivariate_lags=48,
                         preprocessing=PositiveOutput())
 df_imputed = tsi(X=df,
                  subset_cols=['col_1', 'col_17'],
                  after='2024-06-14',
-                 n_nearest_features=35)
+                 n_nearest_features=75)
 ```
 
 Check out the [documentation](https://timefiller.readthedocs.io/en/latest/index.html) for details on available options to customize your imputation.
@@ -73,6 +73,11 @@ from timefiller.utils import add_mar_nan, fetch_pems_bay
 
 # Fetch the time series dataset (e.g., PeMS-Bay traffic data)
 df = fetch_pems_bay()
+df.shape, df.index.freq
+>>> ((52128, 325), <5 * Minutes>)
+```
+
+```python
 dfm = df.copy()  # Create a copy to introduce missing values later
 
 # Randomly select one column (sensor ID) to introduce missing values
@@ -85,11 +90,15 @@ dfm.iloc[i:j, k] = np.nan  # Introduce missing values in this range for the sele
 dfm = add_mar_nan(dfm, ratio=0.01)
 
 # Initialize the TimeSeriesImputer with AR lags and multivariate lags
-tsi = TimeSeriesImputer(ar_lags=48, multivariate_lags=6)
+tsi = TimeSeriesImputer(ar_lags=(1, 2, 3, 4, 5, 10, 15, 25, 50), preprocessing=PositiveOutput())
 
 # Apply the imputation method on the modified dataframe
-df_imputed = tsi(dfm, subset_cols=col, n_nearest_features=75)
+%time df_imputed = tsi(dfm, subset_cols=col)
+>>> CPU times: total: 7.91 s
+>>> Wall time: 2.93 s
+```
 
+```python
 # Plot the imputed data alongside the data with missing values
 df_imputed[col].rename('imputation').plot(figsize=(10, 3), lw=0.8, c='C0')
 dfm[col].rename('data to impute').plot(ax=plt.gca(), lw=0.8, c='C1')
