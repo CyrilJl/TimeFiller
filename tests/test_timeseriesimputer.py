@@ -18,6 +18,9 @@ def impute_and_assert(tsi, data, after=None, subset_cols=None, **kwargs):
     """Helper function to perform imputation and check results."""
     imputed_data = tsi(data, after=after, subset_cols=subset_cols, **kwargs)
     assert imputed_data.isnull().sum().sum() < data.isnull().sum().sum()
+    assert imputed_data.shape == data.shape
+    assert imputed_data.index.equals(data.index)
+    assert imputed_data.columns.equals(data.columns)
     return imputed_data
 
 
