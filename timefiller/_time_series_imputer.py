@@ -122,7 +122,7 @@ class TimeSeriesImputer:
         return None
 
     @staticmethod
-    def _sample_features(data, col, n_nearest_features, rng):
+    def _sample_features(data, col, n_nearest_covariates, rng):
         """
         Randomly selects the most relevant columns for imputation
         based on correlation and data availability.
@@ -130,7 +130,7 @@ class TimeSeriesImputer:
         Args:
             data (pd.DataFrame): Data.
             col (str): Target column.
-            n_nearest_features (int): Number of features to select.
+            n_nearest_covariates (int): Number of features to select.
             rng (np.random.Generator): Random number generator.
 
         Returns:
@@ -142,7 +142,7 @@ class TimeSeriesImputer:
         s2 = ((~data_col.isnull()).astype(float).values @ (~data_others.isnull()).astype(float).values) / len(data)
         p = np.sqrt(abs(s1) * s2)
         p[~np.isfinite(p)] = 0
-        size = min(n_nearest_features, len(s1), len(p[p > 0]))
+        size = min(n_nearest_covariates, len(s1), len(p[p > 0]))
         cols_to_sample = [_ for _ in data.columns if _ != col]
         return list(rng.choice(a=cols_to_sample, size=size, p=p / p.sum(), replace=False))
 
@@ -347,22 +347,22 @@ class TimeSeriesImputer:
             X_ = X_.drop(columns=non_usable_cols)
         return X_
 
-    def _select_imputation_features(self, X_, col, n_nearest_features, rng):
+    def _select_imputation_features(self, X_, col, n_nearest_covariates, rng):
         """
         Selects the most relevant features for imputing a column.
 
         Args:
             X_ (pd.DataFrame): Preprocessed data.
             col (str): Target column.
-            n_nearest_features (int or None): Number of most relevant features
+            n_nearest_covariates (int or None): Number of most relevant features
                 to select.
             rng (np.random.Generator): Random number generator.
 
         Returns:
             list: List of selected column names.
         """
-        if isinstance(n_nearest_features, int):
-            return [col] + self._sample_features(X_, col, n_nearest_features, rng)
+        if isinstance(n_nearest_covariates, int):
+            return [col] + self._sample_features(X_, col, n_nearest_covariates, rng)
         else:
             return list(X_.columns)
 
@@ -419,7 +419,7 @@ class TimeSeriesImputer:
             defined, a dictionary containing uncertainties for each column.
 
         Note:
-            About n_nearest_features, the probability of selecting a feature is proportional to:
+            About n_nearest_covariates, the probability of selecting a feature is proportional to:
             sqrt(|correlation| * co_occurrence_ratio)
             where:
             - correlation is calculated using r_regression between the feature and target
