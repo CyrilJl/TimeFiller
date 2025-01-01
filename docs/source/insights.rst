@@ -8,7 +8,7 @@ to meet specific needs.
 
 In the following example, we assume ``df`` is a pandas DataFrame with missing values.
 
-Class Arguments
+``TimeSeriesImputer`` Arguments
 ---------------
 
 ``estimator``
