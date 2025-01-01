@@ -49,14 +49,14 @@ When imputing a set of positive time series, ``timefiller`` provides a useful to
     tsi = TimeSeriesImputer(ar_lags=24, preprocessing=PositiveOutput())
     df_imputed = tsi(df)
 
-While specifying `estimator=LinearRegression(positive=True, fit_intercept=False)` can enforce positive imputed values,
+While specifying ``estimator=LinearRegression(positive=True, fit_intercept=False)`` can enforce positive imputed values,
 this approach may be less effective when using autoregressive lags. This is because it prevents the model from assigning
-negative weights to lagged series, which could otherwise help create differential-like features. The `PositiveOutput`
+negative weights to lagged series, which could otherwise help create differential-like features. The ``PositiveOutput``
 strategy, inspired by transformations like Box-Cox or Yeo-Johnson, addresses this by expanding values near zero into the
 negative domain before fitting the model, and then applying the inverse transformation after prediction. This functions
 as a softened ReLU, rather than working with the original data and forcing negative predictions to zero (as in a hard ReLU).
-The threshold for "near-zero" values can be controlled by the user: `PositiveOutput(q=10)` sets the threshold at the 10th
-percentile of each time series, while `PositiveOutput(v=25.)` sets a fixed threshold of 25 for all time series. 
+The threshold for "near-zero" values can be controlled by the user: ``PositiveOutput(q=10)`` sets the threshold at the 10th
+percentile of each time series, while ``PositiveOutput(v=25.)`` sets a fixed threshold of 25 for all time series. 
 
 ``ar_lags``
 ~~~~~~~~~~~
