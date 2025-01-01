@@ -13,10 +13,13 @@ Originally developed for imputation, it also proves useful for forecasting, part
 ## Installation
 
 You can get ``timefiller`` from PyPi:
+
 ```bash
 pip install timefiller
 ```
+
 But also from conda-forge:
+
 ```bash
 conda install -c conda-forge timefiller
 ```
@@ -27,7 +30,12 @@ mamba install timefiller
 
 ## Why this package?
 
-While there are other Python packages for similar tasks, this one is lightweight with a straightforward and simple API.
+This package is an excellent choice for tasks involving missing data. It is lightweight and offers a straightforward, user-friendly API. Since its initial release, numerous enhancements have been made to accelerate data imputation, with further improvements planned for the future.
+
+This package is ideal if:
+
+- You have a collection of correlated time series with missing data and need to impute the missing values in one, several, or all of them
+- You need to perform forecasting in scenarios with missing data, especially when dealing with unpredictable or irregular patterns, and require an algorithm capable of handling them dynamically
 
 ## TimeSeriesImputer
 
@@ -128,7 +136,7 @@ plt.legend()
 plt.show()
 ```
 
-<img src="https://raw.githubusercontent.com/CyrilJl/timefiller/main/_static/result_imputation.png" width="750">
+<img src="https://raw.githubusercontent.com/CyrilJl/timefiller/main/_static/result_imputation.png" width="750" alt="result">
 
 ## Algorithmic Approach
 
