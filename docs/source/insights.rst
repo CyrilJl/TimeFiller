@@ -52,7 +52,7 @@ When imputing a set of positive time series, ``timefiller`` provides a useful to
 While specifying ``estimator=LinearRegression(positive=True, fit_intercept=False)`` can enforce positive imputed values,
 this approach may be less effective when using autoregressive lags. This is because it prevents the model from assigning
 negative weights to lagged series, which could otherwise help create differential-like features (think of the approximation
-y[t+1] ≈ y[t] + Δt x (y[t] - y[t-1]). The ``PositiveOutput`` strategy, inspired by transformations like Box-Cox or Yeo-Johnson,
+y[t+1] ≈ y[t] + Δt x (y[t] - y[t-1])). The ``PositiveOutput`` strategy, inspired by transformations like Box-Cox or Yeo-Johnson,
 addresses this by expanding values near zero into the negative domain before fitting the model, and then applying the inverse
 transformation after prediction. This functions as a softened ReLU, rather than working with the original data and forcing
 negative predictions to zero (as in a hard ReLU). The threshold for "near-zero" values can be controlled by the user:
