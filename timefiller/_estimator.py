@@ -32,6 +32,9 @@ class FastRidge:
         self.fit_intercept = fit_intercept
         self.regularization = regularization
 
+    def __repr__(self):
+        return f"FastRidge(fit_intercept={self.fit_intercept}, regularization={self.regularization})"
+
     def get_params(self, deep=True):
         return {"regularization": self.regularization, "fit_intercept": self.fit_intercept}
 
