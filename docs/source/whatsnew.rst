@@ -7,7 +7,7 @@ Version 1.0 (December 31th 2024)
 --------------------------------
 - Default estimator to custom implementation of Ridge regression ; no scikit-learn overhead for speed
 - ``multivariate_lags`` is 'auto' by default ; it seeks for optimal lags in the covariates during the 
-    imputation of each column
+ imputation of each column
 - Numerous speed-ups improvements
 
 Version 1.0.10 (December 23th 2024)
