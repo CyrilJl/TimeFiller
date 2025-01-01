@@ -21,6 +21,8 @@ timefiller documentation
 each series is processed individually, leveraging correlations with the other series as well as its own auto-regressive patterns.
 The package is designed to be easy to use, even for non-experts.
 
+Originally developed for imputation, it also proves useful for forecasting, particularly when covariates contain missing values.
+
 Installation
 ------------
 
@@ -41,8 +43,7 @@ Installation
 Why this package?
 -----------------
 
-While there are other Python packages for similar tasks, this one is lightweight with a straightforward and simple API. Currently,
-its speed may be a limitation for large datasets, but it can still be quite useful in many cases.
+While there are other Python packages for similar tasks, this one is lightweight with a straightforward and simple API.
 
 Basic Usage
 -----------
