@@ -46,9 +46,14 @@ class PositiveOutput(TransformerMixin):
         Raises:
             ValueError: If the data contains negative values.
         """
-        if isinstance(X, pd.DataFrame) and self.columns is not None:
-            X_subset = X[self.columns]
-        else:
+        if isinstance(X, pd.DataFrame):
+            if self.columns is not None:
+                X_subset = X[self.columns]
+                self.columns_ = self.columns
+            else:
+                X_subset = X
+                self.columns_ = list(X.columns)
+        if isinstance(X, np.ndarray):
             X_subset = X
 
         if np.nanmin(X_subset) < 0:
@@ -59,16 +64,6 @@ class PositiveOutput(TransformerMixin):
         else:
             self.thresholds_ = np.full(shape=X_subset.shape[1], fill_value=self.v)
         return self
-
-    def extract_subset_with_copy(self, X):
-        X_copy = X.copy()
-        if isinstance(X, pd.DataFrame) and self.columns is not None:
-            X_subset = X[self.columns].values
-        else:
-            X_subset = np.asarray(X)
-
-        mask = X_subset < self.thresholds_
-        return X_copy, X_subset, mask
 
     def transform(self, X, y=None):
         """
@@ -81,13 +76,22 @@ class PositiveOutput(TransformerMixin):
         Returns:
             array-like or DataFrame: The transformed data with negative expansion.
         """
-        X_copy, X_subset, mask = self.extract_subset_with_copy(X)
-        transformed = np.where(mask, 2 * X_subset - self.thresholds_, X_subset)
+        if isinstance(X, pd.DataFrame):
+            if self.columns is not None:
+                X_subset = X[self.columns]
+            else:
+                X_subset = X
+        else:
+            X_subset = X
 
-        if isinstance(X, pd.DataFrame) and self.columns is not None:
-            X_copy[self.columns] = transformed
-            return X_copy
-        return transformed
+        transformed = np.where(X_subset<self.thresholds_, 2 * X_subset - self.thresholds_, X_subset)
+
+        if isinstance(X, pd.DataFrame):
+            X_transformed = X.copy()
+            X_transformed[self.columns_] = transformed
+            return X_transformed
+        else:
+            return transformed
 
     def inverse_transform(self, X, y=None):
         """
@@ -100,10 +104,19 @@ class PositiveOutput(TransformerMixin):
         Returns:
             array-like or DataFrame: The original data after reversing the negative expansion.
         """
-        X_copy, X_subset, mask = self.extract_subset_with_copy(X)
-        inverted = np.maximum(0, np.where(mask, 0.5 * X_subset + self.thresholds_ / 2, X_subset))
+        if isinstance(X, pd.DataFrame):
+            if self.columns is not None:
+                X_subset = X[self.columns]
+            else:
+                X_subset = X
+        else:
+            X_subset = X
 
-        if isinstance(X, pd.DataFrame) and self.columns is not None:
-            X_copy[self.columns] = inverted
-            return X_copy
-        return inverted
+        inverted = np.maximum(0, np.where(X_subset<self.thresholds_, 0.5 * X_subset + self.thresholds_ / 2, X_subset))
+
+        if isinstance(X, pd.DataFrame):
+            X_inverted = X.copy()
+            X_inverted[self.columns_] = inverted
+            return X_inverted
+        else:
+            return inverted
