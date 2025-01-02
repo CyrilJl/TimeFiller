@@ -84,7 +84,7 @@ class PositiveOutput(TransformerMixin):
         else:
             X_subset = X
 
-        transformed = np.where(X_subset<self.thresholds_, 2 * X_subset - self.thresholds_, X_subset)
+        transformed = np.where(X_subset < self.thresholds_, 2 * X_subset - self.thresholds_, X_subset)
 
         if isinstance(X, pd.DataFrame):
             X_transformed = X.copy()
@@ -112,7 +112,7 @@ class PositiveOutput(TransformerMixin):
         else:
             X_subset = X
 
-        inverted = np.maximum(0, np.where(X_subset<self.thresholds_, 0.5 * X_subset + self.thresholds_ / 2, X_subset))
+        inverted = np.maximum(0, np.where(X_subset < self.thresholds_, 0.5 * X_subset + self.thresholds_ / 2, X_subset))
 
         if isinstance(X, pd.DataFrame):
             X_inverted = X.copy()

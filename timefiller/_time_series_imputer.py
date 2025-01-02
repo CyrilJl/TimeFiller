@@ -37,7 +37,7 @@ class TimeSeriesImputer:
         Args:
             estimator (object, optional): Estimator for regression.
             alpha (float or list, optional): Quantile level(s) for prediction intervals,
-                MAPIE style: if set to 0.1, 5% and 95% confidence bounds are computed. Under the 
+                MAPIE style: if set to 0.1, 5% and 95% confidence bounds are computed. Under the
                 hood, the provided estimator is passed to MapieRegressor.
                 Default is None.
             preprocessing (object, optional): Preprocessing step (e.g., StandardScaler).
@@ -120,7 +120,7 @@ class TimeSeriesImputer:
         if isinstance(ar_lags, int):
             return list(range(-abs(ar_lags), 0)) + list(range(1, abs(ar_lags) + 1))
         if isinstance(ar_lags, (list, tuple, np.ndarray)):
-            return sorted(sum([[-k, k] for k in ar_lags if k!= 0], []))
+            return sorted(sum([[-k, k] for k in ar_lags if k != 0], []))
         return None
 
     @staticmethod
@@ -477,5 +477,8 @@ class TimeSeriesImputer:
                 uncertainties[alpha] = uncertainties[alpha].reindex_like(X)
                 if self.preprocessing is not None:
                     uncertainties[alpha] = self.preprocessing.inverse_transform(uncertainties[alpha])
-            uncertainties = {col: pd.concat([uncertainties[alpha][col].rename(alpha) for alpha in alphas], axis=1) for col in X.columns[subset_cols]}
+            uncertainties = {
+                col: pd.concat([uncertainties[alpha][col].rename(alpha) for alpha in alphas], axis=1)
+                for col in X.columns[subset_cols]
+            }
             return ret, uncertainties
