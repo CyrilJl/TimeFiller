@@ -36,7 +36,9 @@ class TimeSeriesImputer:
 
         Args:
             estimator (object, optional): Estimator for regression.
-            alpha (float or list, optional): Quantile level(s) for prediction intervals.
+            alpha (float or list, optional): Quantile level(s) for prediction intervals,
+                MAPIE style: if set to 0.1, 5% and 95% confidence bounds are computed. Under the 
+                hood, the provided estimator is passed to MapieRegressor.
                 Default is None.
             preprocessing (object, optional): Preprocessing step (e.g., StandardScaler).
                 Default is StandardScaler(with_mean=False).
