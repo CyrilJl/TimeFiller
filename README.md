@@ -90,7 +90,7 @@ Let's evaluate how ``timefiller`` performs on a real-world dataset, the [PeMS-Ba
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from timefiller import TimeSeriesImputer
+from timefiller import PositiveOutput, TimeSeriesImputer
 from timefiller.utils import add_mar_nan, fetch_pems_bay
 
 # Fetch the time series dataset (e.g., PeMS-Bay traffic data)
