@@ -118,7 +118,7 @@ class TimeSeriesImputer:
         if isinstance(ar_lags, int):
             return list(range(-abs(ar_lags), 0)) + list(range(1, abs(ar_lags) + 1))
         if isinstance(ar_lags, (list, tuple, np.ndarray)):
-            return sorted(set([k for k in ar_lags if k != 0]))
+            return sorted(sum([[-k, k] for k in ar_lags if k!= 0], []))
         return None
 
     @staticmethod
