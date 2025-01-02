@@ -144,7 +144,10 @@ class TimeSeriesImputer:
         p[~np.isfinite(p)] = 0
         size = min(n_nearest_covariates, len(s1), len(p[p > 0]))
         cols_to_sample = [_ for _ in data.columns if _ != col]
-        return list(rng.choice(a=cols_to_sample, size=size, p=p / p.sum(), replace=False))
+        if cols_to_sample and size:
+            return list(rng.choice(a=cols_to_sample, size=size, p=p / p.sum(), replace=False))
+        else:
+            return []
 
     @staticmethod
     @njit(parallel=True, boundscheck=False, fastmath=True)
