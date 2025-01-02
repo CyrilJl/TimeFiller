@@ -23,6 +23,12 @@ dependencies = [
     "tqdm"
 ]
 
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "requests"
+]
+
 [project.urls]
 Homepage = "https://github.com/CyrilJl/TimeFiller"
 
