@@ -472,4 +472,5 @@ class TimeSeriesImputer:
                 uncertainties[alpha] = uncertainties[alpha].reindex_like(X)
                 if self.preprocessing is not None:
                     uncertainties[alpha] = self.preprocessing.inverse_transform(uncertainties[alpha])
+            uncertainties = {col: pd.concat([uncertainties[alpha][col].rename(alpha) for alpha in alphas], axis=1) for col in X.columns[subset_cols]}
             return ret, uncertainties
