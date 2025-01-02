@@ -48,7 +48,7 @@ class TimeSeriesImputer:
             multivariate_lags (int or str, optional): If specified, the optimal positive
                 and negative lags are determined for each column based on correlation.
                 These optimal lags are recalculated for each target column. If 'auto',
-                optimal lags are searched within 5% of the series length. If an integer,
+                optimal lags are searched within 2% of the series length. If an integer,
                 optimal lags are searched within the range [-multivariate_lags, multivariate_lags].
                 Default is 'auto'.
             na_frac_max (float, optional): Maximum fraction of missing values per column.
