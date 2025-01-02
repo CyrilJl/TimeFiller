@@ -152,7 +152,7 @@ class TimeSeriesImputer:
             return []
 
     @staticmethod
-    @njit(parallel=True, boundscheck=False, fastmath=True)
+    @njit(parallel=True, boundscheck=False)
     def cross_correlation(s1, s2, max_lags):
         """
         Computes cross-correlation between two series with lags.
