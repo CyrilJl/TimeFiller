@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "timefiller"
+version = "1.0.1"
+description = "A package for imputing missing data in time series and forecasting in missing-data contexts"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    { name = "Cyril Joly" }
+]
+classifiers = [
+    "License :: OSI Approved :: MIT License"
+]
+dependencies = [
+    "mapie",
+    "numpy",
+    "optimask",
+    "pandas",
+    "scikit-learn",
+    "tqdm"
+]
+
+[project.urls]
+Homepage = "https://github.com/CyrilJl/TimeFiller"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.isort]
+known-first-party = ["timefiller"]
