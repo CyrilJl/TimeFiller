@@ -14,21 +14,9 @@ class FastRidge:
         regularization (float): The regularization strength parameter. Default is 1e-2.
         coef_ (numpy.ndarray): Coefficients of the features after fitting the model.
         intercept_ (float): Intercept term after fitting the model.
-
-    Methods:
-        fit(X, y):
-            Fits the Ridge Regression model to the input data.
-        predict(X):
-            Predicts target values for the given input data using the fitted model.
     """
 
     def __init__(self, fit_intercept=True, regularization=1e-2):
-        """
-        Initializes the FastRidge model.
-
-        Args:
-            regularization (float): The regularization strength parameter. Default is 1e-2.
-        """
         self.fit_intercept = fit_intercept
         self.regularization = regularization
 
@@ -85,7 +73,7 @@ class FastRidge:
 
         return self
 
-    def predict(self, X):
+    def predict(self, X: np.ndarray) -> np.ndarray:
         """
         Predicts target values for the given input data.
 

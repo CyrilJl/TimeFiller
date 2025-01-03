@@ -265,7 +265,7 @@ class ImputeMultiVariate:
                         imputation[index, col_to_impute] = pred_result
         return (imputation, uncertainties) if self.alpha else imputation
 
-    def __call__(self, X: np.ndarray, subset_rows=None, subset_cols=None):
+    def __call__(self, X: np.ndarray, subset_rows=None, subset_cols=None) -> np.ndarray:
         """
         Imputes missing data in X.
 

@@ -152,20 +152,20 @@ class TimeSeriesImputer:
             return []
 
     @staticmethod
-    @njit(parallel=True, boundscheck=False)
-    def cross_correlation(s1, s2, max_lags):
+    @njit(parallel=True, boundscheck=False, cache=True)
+    def cross_correlation(s1: np.ndarray, s2: np.ndarray, max_lags: int) -> tuple[np.ndarray, np.ndarray]:
         """
         Computes cross-correlation between two series with lags.
         Equivalent to [pd.Series(s1).corr(pd.Series(s2.shift(lag))) for lag in range(-max_lags, max_lags+1)],
-        but much faster: NaNs are taken into account, and the function uses Numba plus the Welford algorithm.
-        Also slightly faster than statsmodels.tsa.stattools.ccf, and prevent from depending on statsmodels
+        but faster: the function uses Numba plus the Welford algorithm. Also slightly faster than
+        statsmodels.tsa.stattools.ccf, and can handle NaNs, as ccf does not.
         Args:
-            s1 (array): First numpy array.
-            s2 (array): Second numpy array.
+            s1 (np.ndarray): First numpy array.
+            s2 (np.ndarray): Second numpy array.
             max_lags (int): Maximum lag to compute.
 
         Returns:
-            tuple: Lags and cross-correlation values.
+            tuple[np.ndarray, np.ndarray]: Lags and cross-correlation values.
         """
         n = len(s1)
         cross_corr = np.empty(2 * max_lags + 1, dtype=s1.dtype)
@@ -239,6 +239,19 @@ class TimeSeriesImputer:
                 ret.append(x[other_col].shift(-lag).rename(f"{other_col}{-lag:+d}"))
         return pd.concat(ret, axis=1)
 
+    def _add_ar_lags(self, x, col):
+        if self.ar_lags == "auto":
+            raise NotImplementedError
+        else:
+            ar_lags = self.ar_lags
+        x_ar = [x]
+        for k in sorted(ar_lags):
+            x_ar.append(x[col].shift(k).rename(f"{col}{k:+d}"))
+            if self.negative_ar:
+                x_ar.append(-x[col].shift(k).rename(f"{col}{k:+d}_neg"))
+        x = pd.concat(x_ar, axis=1)
+        return x
+
     @staticmethod
     def _process_subset_cols(X, subset_cols):
         """
@@ -301,7 +314,7 @@ class TimeSeriesImputer:
         if isinstance(self.multivariate_lags, int) or self.multivariate_lags == "auto":
             x = self.find_best_lags(x, col, self.multivariate_lags)
         if self.ar_lags is not None:
-            x = self.add_ar_lags(x, col)
+            x = self._add_ar_lags(x, col)
         index_col = x.columns.get_loc(col)
         if self.imputer.alpha is None:
             x_col_imputed = self.imputer(x.values, subset_rows=subset_rows, subset_cols=index_col)[:, index_col]
@@ -317,19 +330,6 @@ class TimeSeriesImputer:
                     [pd.Series(_, index=x.index, name=alpha) for _, alpha in zip(uncertainties_col, alphas)], axis=1
                 ),
             )
-
-    def add_ar_lags(self, x, col):
-        if self.ar_lags == "auto":
-            raise NotImplementedError
-        else:
-            ar_lags = self.ar_lags
-        x_ar = [x]
-        for k in sorted(ar_lags):
-            x_ar.append(x[col].shift(k).rename(f"{col}{k:+d}"))
-            if self.negative_ar:
-                x_ar.append(-x[col].shift(k).rename(f"{col}{k:+d}_neg"))
-        x = pd.concat(x_ar, axis=1)
-        return x
 
     def _preprocess_data(self, X):
         """
