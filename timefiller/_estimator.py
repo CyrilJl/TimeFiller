@@ -45,20 +45,30 @@ class FastRidge:
         Args:
             X (numpy.ndarray): Input data matrix of shape (n_samples, n_features).
             y (numpy.ndarray): Target values of shape (n_samples,).
+            sample_weight (numpy.ndarray): Sample weights of shape (n_samples,). Default is None.
 
         Returns:
             FastRidge: The fitted model instance with updated coefficients and intercept.
         """
         n_samples, n_features = X.shape
 
+        if sample_weight is not None:
+            sample_weight = np.asarray(sample_weight)
+            sample_weight = sample_weight.reshape(-1, 1)
+            X_weighted = X * sample_weight
+            y_weighted = y * sample_weight.flatten()
+        else:
+            X_weighted = X
+            y_weighted = y
+
         if self.fit_intercept:
             a = np.empty(shape=(n_features + 1, n_features + 1), dtype=X.dtype)
-            a[np.ix_(range(n_features), range(n_features))] = X.T @ X
+            a[np.ix_(range(n_features), range(n_features))] = X_weighted.T @ X
             np.fill_diagonal(a, (1 + self.regularization) * a.diagonal())
-            a[-1, :-1] = a[:-1, -1] = X.sum(axis=0)
-            a[-1, -1] = n_samples
+            a[-1, :-1] = a[:-1, -1] = X_weighted.sum(axis=0)
+            a[-1, -1] = sample_weight.sum() if sample_weight is not None else n_samples
 
-            b = np.concatenate([X.T @ y, [y.sum()]])
+            b = np.concatenate([X_weighted.T @ y, [y_weighted.sum()]])
 
             cho_factorized = cho_factor(a)
             w = cho_solve(cho_factorized, b)
@@ -66,9 +76,9 @@ class FastRidge:
             self.coef_ = w[:-1]
             self.intercept_ = w[-1]
         else:
-            a = X.T @ X
+            a = X_weighted.T @ X
             np.fill_diagonal(a, (1 + self.regularization) * a.diagonal())
-            b = X.T @ y
+            b = X_weighted.T @ y
 
             self.coef_ = np.linalg.solve(a, b)
             self.intercept_ = 0
