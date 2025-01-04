@@ -38,10 +38,17 @@ class FastRidge:
         Returns:
             FastRidge: The fitted model instance with updated coefficients and intercept.
         """
-        n_samples, n_features = X.shape
+        n_samples, self.n_features_ = X.shape
 
         if sample_weight is not None:
-            sample_weight = np.asarray(sample_weight)
+            if len(sample_weight) != n_samples:
+                raise ValueError("Sample weights must have the same length as the input data.")
+            sample_weight = np.asarray(sample_weight).astype(float)
+            if sample_weight.ndim != 1:
+                raise ValueError("Sample weights must be a 1D array.")
+            if not np.all(sample_weight >= 0):
+                raise ValueError("Sample weights must be non-negative.")
+            sample_weight /= sample_weight.sum()
             sample_weight = sample_weight.reshape(-1, 1)
             X_weighted = X * sample_weight
             y_weighted = y * sample_weight.flatten()
@@ -50,8 +57,8 @@ class FastRidge:
             y_weighted = y
 
         if self.fit_intercept:
-            a = np.empty(shape=(n_features + 1, n_features + 1), dtype=X.dtype)
-            a[np.ix_(range(n_features), range(n_features))] = X_weighted.T @ X
+            a = np.empty(shape=(self.n_features_ + 1, self.n_features_ + 1), dtype=X.dtype)
+            a[np.ix_(range(self.n_features_), range(self.n_features_))] = X_weighted.T @ X
             np.fill_diagonal(a, (1 + self.regularization) * a.diagonal())
             a[-1, :-1] = a[:-1, -1] = X_weighted.sum(axis=0)
             a[-1, -1] = sample_weight.sum() if sample_weight is not None else n_samples
