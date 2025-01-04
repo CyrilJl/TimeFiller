@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.linalg import cho_factor, cho_solve
 
+from ._misc import check_params
+
 
 class FastRidge:
     """
@@ -17,8 +19,8 @@ class FastRidge:
     """
 
     def __init__(self, fit_intercept=True, regularization=1e-2):
-        self.fit_intercept = fit_intercept
-        self.regularization = regularization
+        self.fit_intercept = check_params(param=fit_intercept, types=bool)
+        self.regularization = check_params(param=regularization, types=(int, float))
 
     def __repr__(self):
         return f"FastRidge(fit_intercept={self.fit_intercept}, regularization={self.regularization})"
