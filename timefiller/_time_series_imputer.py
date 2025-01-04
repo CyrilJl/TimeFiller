@@ -387,6 +387,7 @@ class TimeSeriesImputer:
         Returns:
             pd.DataFrame: The DataFrame with small gaps interpolated.
         """
+        check_params(param=n, types=int)
 
         def interpolate_series_with_limit(series):
             is_nan = series.isna()
