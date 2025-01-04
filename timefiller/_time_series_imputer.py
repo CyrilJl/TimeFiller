@@ -79,8 +79,8 @@ class TimeSeriesImputer:
         self.preprocessing = self._get_preprocessing(preprocessing)
         self.ar_lags = self._get_ar_lags(ar_lags)
         self.multivariate_lags = check_params(multivariate_lags, types=(int, str, type(None)))
-        self.negative_ar = negative_ar
-        self.verbose = verbose
+        self.negative_ar = check_params(param=negative_ar, types=bool)
+        self.verbose = check_params(param=verbose, types=(bool, int))
         self.random_state = random_state
 
     def __repr__(self):
@@ -121,7 +121,9 @@ class TimeSeriesImputer:
             return list(range(-abs(ar_lags), 0)) + list(range(1, abs(ar_lags) + 1))
         if isinstance(ar_lags, (list, tuple, np.ndarray)):
             return sorted(sum([[-k, k] for k in ar_lags if k != 0], []))
-        return None
+        if ar_lags is None:
+            return None
+        raise ValueError("ar_lags must be an integer, a list, a tuple or None.")
 
     @staticmethod
     def _sample_features(data, col, n_nearest_covariates, rng):
@@ -138,6 +140,7 @@ class TimeSeriesImputer:
         Returns:
             list: List of selected columns.
         """
+        check_params(param=n_nearest_covariates, types=int)
         data_col = data[col]
         data_others = data.drop(columns=col)
         s1 = data_others.corrwith(data_col).values
