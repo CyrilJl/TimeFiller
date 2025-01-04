@@ -78,7 +78,7 @@ class ImputeMultiVariate:
             FastRidge()
             if estimator is None
             else estimator
-            if hasattr(estimator, "fit") and hasattr(estimator, "predict")
+            if hasattr(estimator, "fit") and hasattr(estimator, "predict") and hasattr(estimator, "get_params")
             else InvalidEstimatorError()
         )
 
