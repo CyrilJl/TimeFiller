@@ -26,6 +26,8 @@ class PositiveOutput(TransformerMixin):
     def __init__(self, q=10, v=None, columns=None):
         if q is None and v is None:
             raise ValueError("At least one of the arguments 'q' or 'v' must be different from None.")
+        if q is not None and (q < 0 or q > 100):
+            raise ValueError("The quantile must be between 0 and 100.")
 
         self.q = q
         self.v = v
