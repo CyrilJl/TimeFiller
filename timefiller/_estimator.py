@@ -65,7 +65,9 @@ class FastRidge:
             a[-1, :-1] = a[:-1, -1] = X_weighted.sum(axis=0)
             a[-1, -1] = sample_weight.sum() if sample_weight is not None else n_samples
 
-            b = np.concatenate([X_weighted.T @ y, [y_weighted.sum()]])
+            b = np.empty(shape=(self.n_features_ + 1,), dtype=X.dtype)
+            b[:-1] = X_weighted.T @ y
+            b[-1] = y_weighted.sum()
 
             cho_factorized = cho_factor(a)
             w = cho_solve(cho_factorized, b)
