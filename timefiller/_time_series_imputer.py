@@ -86,6 +86,10 @@ class TimeSeriesImputer:
     def __repr__(self):
         return f"TimeSeriesImputer(ar_lags={self.ar_lags}, multivariate_lags={self.multivariate_lags})"
 
+    def _verbose(self, msg, level=1):
+        if level >= self.verbose:
+            print(msg)
+
     @staticmethod
     def _get_preprocessing(preprocessing):
         """
@@ -213,15 +217,14 @@ class TimeSeriesImputer:
         if max_lags == "auto":
             max_lags = min(50, int(0.02 * len(s1)))
         lags, cc = cls.cross_correlation(s1=s1.values, s2=s2.values, max_lags=max_lags)
-        ret, cc0 = [0], cc[max_lags]
+        ret, cc0 = [], cc[max_lags]
         if cc[lags > 0].max() >= cc0:
             ret.append(lags[lags > 0][cc[lags > 0].argmax()])
         if cc[lags < 0].max() >= cc0:
             ret.append(lags[lags < 0][cc[lags < 0].argmax()])
         return ret
 
-    @classmethod
-    def find_best_lags(cls, x, col, max_lags):
+    def find_best_lags(self, x, col, max_lags):
         """
         Finds and applies the best multivariate lags to a given column.
 
@@ -233,13 +236,15 @@ class TimeSeriesImputer:
         Returns:
             pd.DataFrame: DataFrame with lagged series.
         """
+        self._verbose(f"{col} best lags selection", level=1)
         cols = [_ for _ in x.columns if _ != col]
-        ret = [x[col]]
+        ret = [x]
         for other_col in cols:
             ret.append(x[other_col])
-            lags = cls._best_multivariate_lag(x[col], x[other_col], max_lags=max_lags)
+            lags = self._best_multivariate_lag(x[col], x[other_col], max_lags=max_lags)
             for lag in lags:
                 ret.append(x[other_col].shift(-lag).rename(f"{other_col}{-lag:+d}"))
+                self._verbose(f"\t{other_col} : {-lag}", level=1)
         return pd.concat(ret, axis=1)
 
     def _add_ar_lags(self, x, col):
