@@ -49,7 +49,7 @@ The core of `timefiller` is the `TimeSeriesImputer` class is designed for the im
 - **Preprocessing**: The imputer supports preprocessing steps, such as scaling or normalization, which can be specified using the `preprocessing` parameter. This ensures that the data is properly prepared before imputation.
 - **Custom Estimators**: The imputer can use any scikit-learn compatible estimator for the imputation process. This allows for flexibility in choosing the best model for the data.
 - **Handling Missing Values**: The imputer can handle missing values in both the target series and the covariates. It uses the `optimask` library to create NaN-free train and predict matrices for the estimator.
-- **Uncertainty Estimation**: If the `alpha` parameter is specified, the imputer can provide uncertainty estimates for the imputed values.
+- **Uncertainty Estimation**: If the `alpha` parameter is specified, the imputer can provide uncertainty estimates for the imputed values, by wrapping the chosen estimator with [MAPIE](https://mapie.readthedocs.io/en/latest/).
 
 ### Basic Usage
 
