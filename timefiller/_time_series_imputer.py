@@ -87,7 +87,7 @@ class TimeSeriesImputer:
         return f"TimeSeriesImputer(ar_lags={self.ar_lags}, multivariate_lags={self.multivariate_lags})"
 
     def _verbose(self, msg, level=1):
-        if level >= self.verbose:
+        if self.verbose >= level:
             print(msg)
 
     @staticmethod
