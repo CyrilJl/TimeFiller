@@ -358,6 +358,9 @@ class TimeSeriesImputer:
         non_usable_cols = X_.columns[(X_.max() - X_.min()) == 0]
         if len(non_usable_cols) > 0:
             X_ = X_.drop(columns=non_usable_cols)
+        for col in X_.columns:
+            if X_[col].dtype != np.float32:
+                X_[col] = X_[col].astype(np.float32)
         return X_
 
     def _select_imputation_features(self, X_, col, n_nearest_covariates, rng):
