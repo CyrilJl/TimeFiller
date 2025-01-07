@@ -11,6 +11,15 @@
 
 Originally developed for imputation, it also proves useful for forecasting, particularly when covariates contain missing values.
 
+## Why this package?
+
+This package is an excellent choice for tasks involving missing data. It is lightweight and offers a straightforward, user-friendly API. Since its initial release, numerous enhancements have been made to accelerate data imputation, with further improvements planned for the future.
+
+This package is ideal if:
+
+- You have a collection of correlated time series with missing data and need to impute the missing values in one, several, or all of them
+- You need to perform forecasting in scenarios with missing data, especially when dealing with unpredictable or irregular patterns, and require an algorithm capable of handling them dynamically
+
 ## Installation
 
 You can get ``timefiller`` from PyPi:
@@ -28,15 +37,6 @@ conda install -c conda-forge timefiller
 ```bash
 mamba install timefiller
 ```
-
-## Why this package?
-
-This package is an excellent choice for tasks involving missing data. It is lightweight and offers a straightforward, user-friendly API. Since its initial release, numerous enhancements have been made to accelerate data imputation, with further improvements planned for the future.
-
-This package is ideal if:
-
-- You have a collection of correlated time series with missing data and need to impute the missing values in one, several, or all of them
-- You need to perform forecasting in scenarios with missing data, especially when dealing with unpredictable or irregular patterns, and require an algorithm capable of handling them dynamically
 
 ## TimeSeriesImputer
 
