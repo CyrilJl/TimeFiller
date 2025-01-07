@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
 from numba import njit, prange
@@ -160,7 +162,7 @@ class TimeSeriesImputer:
 
     @staticmethod
     @njit(parallel=True, boundscheck=False, cache=True)
-    def cross_correlation(s1: np.ndarray, s2: np.ndarray, max_lags: int) -> tuple[np.ndarray, np.ndarray]:
+    def cross_correlation(s1: np.ndarray, s2: np.ndarray, max_lags: int) -> Tuple[np.ndarray, np.ndarray]:
         """
         Computes cross-correlation between two series with lags.
         Equivalent to [pd.Series(s1).corr(pd.Series(s2.shift(lag))) for lag in range(-max_lags, max_lags+1)],
