@@ -61,5 +61,7 @@ def test_tsi_mapie_uncertainties(pems_data):
     after = "2017-05-01"
     tsi = TimeSeriesImputer(alpha=0.2)
     pems_data_imputed, uncertainties = tsi(pems_data, after=after, subset_cols=subset_cols)
+    assert pems_data_imputed.index.equals(pems_data.index)
+    assert pems_data_imputed.columns.equals(pems_data.columns)
     for col in uncertainties:
         assert uncertainties[col].index.equals(pems_data.index)
