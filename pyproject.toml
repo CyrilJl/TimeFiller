@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "timefiller"
-version = "1.0.2"
+version = "1.0.3"
 description = "A package for imputing missing data in time series and forecasting in missing-data contexts"
 readme = "README.md"
 requires-python = ">=3.8"
