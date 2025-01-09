@@ -69,8 +69,7 @@ class FastRidge:
             b[:-1] = X_weighted.T @ y
             b[-1] = y_weighted.sum()
 
-            cho_factorized = cho_factor(a)
-            w = cho_solve(cho_factorized, b)
+            w = cho_solve(cho_factor(a), b)
 
             self.coef_ = w[:-1]
             self.intercept_ = w[-1]
@@ -79,7 +78,7 @@ class FastRidge:
             np.fill_diagonal(a, (1 + self.regularization) * a.diagonal())
             b = X_weighted.T @ y
 
-            self.coef_ = np.linalg.solve(a, b)
+            self.coef_ = cho_solve(cho_factor(a), b)
             self.intercept_ = 0
 
         return self
