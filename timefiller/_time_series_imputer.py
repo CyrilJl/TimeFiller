@@ -242,7 +242,6 @@ class TimeSeriesImputer:
         cols = [_ for _ in x.columns if _ != col]
         ret = [x]
         for other_col in cols:
-            ret.append(x[other_col])
             lags = self._best_multivariate_lag(x[col], x[other_col], max_lags=max_lags)
             for lag in lags:
                 ret.append(x[other_col].shift(-lag).rename(f"{other_col}{-lag:+d}"))
