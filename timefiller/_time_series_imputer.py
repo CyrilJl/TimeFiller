@@ -457,6 +457,9 @@ class TimeSeriesImputer:
         subset_rows = self._process_subset_rows(X_, before, after)
         subset_cols = self._process_subset_cols(X_, subset_cols)
 
+        if isinstance(preimpute_covariates_limit, int):
+            preimputed_X = self.interpolate_small_gaps(df=X_, n=preimpute_covariates_limit)
+
         for index_col in tqdm(subset_cols, disable=(not self.verbose)):
             col = columns[index_col]
             if X_[col].isnull().mean() > 0:
@@ -464,7 +467,7 @@ class TimeSeriesImputer:
                 X_col = X_[cols_in].copy()
                 if isinstance(preimpute_covariates_limit, int):
                     covariates = [_ for _ in cols_in if _ != col]
-                    X_col[covariates] = self.interpolate_small_gaps(df=X_col[covariates], n=preimpute_covariates_limit)
+                    X_col[covariates] = preimputed_X[covariates]
                 if self.imputer.alpha is None:
                     ret.append(self._impute_col(x=X_col, col=col, subset_rows=subset_rows))
                 else:
