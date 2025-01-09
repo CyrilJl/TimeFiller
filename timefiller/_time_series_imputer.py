@@ -384,27 +384,22 @@ class TimeSeriesImputer:
             return list(X_.columns)
 
     @staticmethod
-    def interpolate_small_gaps(df: pd.DataFrame, n: int) -> pd.DataFrame:
-        """
-        Interpolates series of missing values (NaN) in a Pandas DataFrame,
+    def interpolate_small_gaps(series: pd.Series, n: int) -> pd.Series:
+        """Interpolate missing values (NaN) in a Pandas Series,
         but only for gaps of length n or less.
 
         Parameters:
-            df (pd.DataFrame): The DataFrame containing missing values.
+            series (pd.Series): The Series containing missing values.
             n (int): The maximum length of gaps to interpolate.
 
         Returns:
-            pd.DataFrame: The DataFrame with small gaps interpolated.
+            pd.Series: The Series with small gaps interpolated.
         """
         check_params(param=n, types=int)
-
-        def interpolate_series_with_limit(series):
-            is_nan = series.isna()
-            gaps = (is_nan != is_nan.shift()).cumsum()
-            mask = series.groupby(gaps).transform("size") <= n
-            return series.interpolate().where(mask, series)
-
-        return df.apply(interpolate_series_with_limit, axis=0)
+        is_nan = series.isna()
+        gaps = (is_nan != is_nan.shift()).cumsum()
+        mask = series.groupby(gaps).transform("size") <= n
+        return series.interpolate().where(mask, series)
 
     def __call__(
         self,
@@ -457,7 +452,7 @@ class TimeSeriesImputer:
         subset_cols = self._process_subset_cols(X_, subset_cols)
 
         if isinstance(preimpute_covariates_limit, int):
-            preimputed_X = self.interpolate_small_gaps(df=X_, n=preimpute_covariates_limit)
+            preimputed_X = {}
 
         for index_col in tqdm(subset_cols, disable=(not self.verbose)):
             col = columns[index_col]
@@ -466,7 +461,12 @@ class TimeSeriesImputer:
                 X_col = X_[cols_in].copy()
                 if isinstance(preimpute_covariates_limit, int):
                     covariates = [_ for _ in cols_in if _ != col]
-                    X_col[covariates] = preimputed_X[covariates]
+                    for covariate in covariates:
+                        if covariate not in preimputed_X:
+                            preimputed_X[covariate] = self.interpolate_small_gaps(
+                                series=X_[covariate], n=preimpute_covariates_limit
+                            )
+                        X_col[covariate] = preimputed_X[covariate]
                 if self.imputer.alpha is None:
                     ret.append(self._impute_col(x=X_col, col=col, subset_rows=subset_rows))
                 else:
