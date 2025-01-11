@@ -148,9 +148,9 @@ class ImputeMultiVariate:
             - y_train (np.ndarray): Training targets.
             - X_pred (np.ndarray): Data to predict.
         """
-        X_train = np.empty((len(selected_rows), len(selected_cols)))
-        y_train = np.empty(len(selected_rows))
-        X_pred = np.empty((len(index_predict), len(selected_cols)))
+        X_train = np.empty((len(selected_rows), len(selected_cols)), dtype=X.dtype)
+        y_train = np.empty(len(selected_rows), dtype=X.dtype)
+        X_pred = np.empty((len(index_predict), len(selected_cols)), dtype=X.dtype)
         for i in prange(len(selected_rows)):
             for j in prange(len(selected_cols)):
                 X_train[i, j] = X[selected_rows[i], selected_cols[j]]
