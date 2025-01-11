@@ -1,3 +1,5 @@
+<div align="center">
+
 [![PyPI - Version](https://img.shields.io/pypi/v/timefiller)](https://pypi.org/project/timefiller/)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/timefiller.svg)](https://anaconda.org/conda-forge/timefiller)
 [![Documentation Status](https://readthedocs.org/projects/timefiller/badge/?version=latest)](https://timefiller.readthedocs.io/en/latest/?badge=latest)
@@ -5,7 +7,11 @@
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/51d0dd39565a410985a6836e7d6bcd0b)](https://app.codacy.com/gh/CyrilJl/TimeFiller/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 ![Style](https://img.shields.io/badge/style-ruff-41B5BE?style=flat)
 
-# <img src="https://raw.githubusercontent.com/CyrilJl/timefiller/main/_static/logo_timefiller.svg" alt="Logo BatchStats" width="200" height="200" align="right"> timefiller
+<img src="https://raw.githubusercontent.com/CyrilJl/timefiller/main/_static/logo_timefiller.svg" alt="Logo BatchStats" width="200" height="200">
+
+# timefiller
+
+</div>
 
 `timefiller` is a Python package designed for time series imputation and forecasting. When applied to a set of correlated time series, each series is processed individually, utilizing both its own auto-regressive patterns and correlations with the other series. The package is user-friendly, making it accessible even to non-experts.
 
