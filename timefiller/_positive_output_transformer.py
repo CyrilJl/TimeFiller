@@ -93,10 +93,10 @@ class PositiveOutput(TransformerMixin, BaseEstimator):
         for i in prange(X.shape[0]):
             for j in range(X.shape[1]):
                 if X[i, j] < thresholds[j]:
-                    result[i, j] = 0.5 * X[i, j] + 0.5 * thresholds[j]
+                    result[i, j] = max(0, 0.5 * X[i, j] + 0.5 * thresholds[j])
                 else:
                     result[i, j] = X[i, j]
-        return np.maximum(0, result)
+        return result
 
     def transform(self, X, y=None):
         """Transforms the data by extending values below the threshold.
