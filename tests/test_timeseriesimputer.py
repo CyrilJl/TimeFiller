@@ -1,8 +1,9 @@
 import numpy as np
 import pytest
 from sklearn.datasets import make_spd_matrix
+from sklearn.linear_model import Ridge
 
-from timefiller import ImputeMultiVariate, TimeSeriesImputer
+from timefiller import ImputeMultiVariate, PositiveOutput, TimeSeriesImputer
 from timefiller.utils import add_mar_nan, fetch_pems_bay
 
 
@@ -51,7 +52,12 @@ def test_tsi_variants(pems_data, ar_lags, multivariate_lags, n_nearest_covariate
 
 def test_tsi_full(pems_data):
     """Test imputation on the full time series."""
-    tsi = TimeSeriesImputer()
+    tsi = TimeSeriesImputer(
+        estimator=Ridge(positive=True),
+        ar_lags=(1, 2, 5, 15, 25, 50),
+        preprocessing=PositiveOutput(q=20),
+        negative_ar=True,
+    )
     impute_and_assert(tsi, pems_data.sample(n=10, axis=1))
 
 
