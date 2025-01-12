@@ -9,9 +9,9 @@
 
 <img src="https://raw.githubusercontent.com/CyrilJl/timefiller/main/_static/logo_timefiller.svg" alt="Logo BatchStats" width="200" height="200">
 
-# timefiller
-
 </div>
+
+#
 
 `timefiller` is a Python package designed for time series imputation and forecasting. When applied to a set of correlated time series, each series is processed individually, utilizing both its own auto-regressive patterns and correlations with the other series. The package is user-friendly, making it accessible even to non-experts.
 
