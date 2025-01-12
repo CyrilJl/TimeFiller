@@ -152,11 +152,11 @@ class ImputeMultiVariate:
         y_train = np.empty(len(selected_rows), dtype=X.dtype)
         X_pred = np.empty((len(index_predict), len(selected_cols)), dtype=X.dtype)
         for i in prange(len(selected_rows)):
-            for j in prange(len(selected_cols)):
+            for j in range(len(selected_cols)):
                 X_train[i, j] = X[selected_rows[i], selected_cols[j]]
             y_train[i] = X[selected_rows[i], col_to_impute]
         for i in prange(len(index_predict)):
-            for j in prange(len(selected_cols)):
+            for j in range(len(selected_cols)):
                 X_pred[i, j] = X[index_predict[i], selected_cols[j]]
         return X_train, y_train, X_pred
 
