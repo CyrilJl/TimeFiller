@@ -220,11 +220,11 @@ class TimeSeriesImputer:
             max_lags = min(50, int(0.02 * len(s1)))
         lags, cc = cls.cross_correlation(s1=s1.values, s2=s2.values, max_lags=max_lags)
         ret, cc0 = [], cc[max_lags]
-        if cc[lags > 0].max() >= cc0:
+        if cc[lags > 0].max() >= 1.1 * cc0:
             ret.append(lags[lags > 0][cc[lags > 0].argmax()])
-        if cc[lags < 0].max() >= cc0:
+        if cc[lags < 0].max() >= 1.1 * cc0:
             ret.append(lags[lags < 0][cc[lags < 0].argmax()])
-        return ret
+        return np.array(ret)
 
     def find_best_lags(self, x, col, max_lags):
         """
@@ -243,9 +243,9 @@ class TimeSeriesImputer:
         ret = [x]
         for other_col in cols:
             lags = self._best_multivariate_lag(x[col], x[other_col], max_lags=max_lags)
-            for lag in lags:
-                ret.append(x[other_col].shift(-lag).rename(f"{other_col}{-lag:+d}"))
-                self._verbose(f"\t{other_col} : {-lag}", level=1)
+            if len(lags) > 0:
+                ret.append(x[other_col].shift(periods=list(-lags)))
+                self._verbose(f"\t{other_col} : {-lags}", level=1)
         return pd.concat(ret, axis=1)
 
     def _add_ar_lags(self, x, col):
@@ -253,11 +253,9 @@ class TimeSeriesImputer:
             raise NotImplementedError
         else:
             ar_lags = self.ar_lags
-        x_ar = [x]
-        for k in sorted(ar_lags):
-            x_ar.append(x[col].shift(k).rename(f"{col}{k:+d}"))
-            if self.negative_ar:
-                x_ar.append(-x[col].shift(k).rename(f"{col}{k:+d}_neg"))
+        x_ar = [x, x[col].shift(periods=ar_lags)]
+        if self.negative_ar:
+            x_ar.append((-x[col]).rename(f"{col}_neg").shift(periods=ar_lags))
         x = pd.concat(x_ar, axis=1)
         return x
 
@@ -299,12 +297,15 @@ class TimeSeriesImputer:
         Returns:
             list: Indices of the retained rows.
         """
-        index = pd.Series(np.arange(len(X)), index=X.index)
-        if before is not None:
-            index = index[index.index <= pd.to_datetime(str(before))]
-        if after is not None:
-            index = index[pd.to_datetime(str(after)) <= index.index]
-        return list(index.values)
+        if (before is None) and (after is None):
+            return None
+        else:
+            index = pd.Series(np.arange(len(X)), index=X.index)
+            if before is not None:
+                index = index[index.index <= pd.to_datetime(str(before))]
+            if after is not None:
+                index = index[pd.to_datetime(str(after)) <= index.index]
+            return list(index.values)
 
     def _impute_col(self, x, col, subset_rows):
         """
@@ -351,17 +352,11 @@ class TimeSeriesImputer:
             pd.DataFrame: Preprocessed data.
         """
         if self.preprocessing is not None:
-            X_ = pd.DataFrame(self.preprocessing.fit_transform(X), index=X.index, columns=X.columns)
+            X_ = pd.DataFrame(self.preprocessing.fit_transform(X), index=X.index, columns=X.columns).astype("float32")
         else:
-            X_ = X.copy()
+            X_ = X.astype("float32")
         if X_.index.freq is None:
             X_ = X_.asfreq(pd.infer_freq(X_.index))
-        non_usable_cols = X_.columns[(X_.max() - X_.min()) == 0]
-        if len(non_usable_cols) > 0:
-            X_ = X_.drop(columns=non_usable_cols)
-        for col in X_.columns:
-            if X_[col].dtype != np.float32:
-                X_[col] = X_[col].astype(np.float32)
         return X_
 
     def _select_imputation_features(self, X_, col, n_nearest_covariates, rng):
@@ -474,7 +469,7 @@ class TimeSeriesImputer:
                     ret.append(imputed_col)
                     uncertainties[col] = uncertainties_col
         if ret:
-            ret = pd.concat(ret, axis=1).combine_first(X)[X.columns]
+            ret = pd.concat(ret, axis=1).combine_first(X_)[X_.columns]
         else:
             ret = X_
 
