@@ -165,7 +165,7 @@ class TimeSeriesImputer:
     def cross_correlation(s1: np.ndarray, s2: np.ndarray, max_lags: int) -> Tuple[np.ndarray, np.ndarray]:
         """
         Computes cross-correlation between two series with lags.
-        Equivalent to [pd.Series(s1).corr(pd.Series(s2.shift(lag))) for lag in range(-max_lags, max_lags+1)],
+        Equivalent to [pd.Series(s1).corr(pd.Series(s2.shift(-lag))) for lag in range(-max_lags, max_lags+1)],
         but faster: the function uses Numba plus the Welford algorithm. Also slightly faster than
         statsmodels.tsa.stattools.ccf, and can handle NaNs, as ccf does not.
         Args:
