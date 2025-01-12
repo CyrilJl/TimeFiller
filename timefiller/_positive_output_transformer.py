@@ -49,21 +49,24 @@ class PositiveOutput(TransformerMixin, BaseEstimator):
         Raises:
             ValueError: If the data contains negative values.
         """
-        if np.nanmin(X) < 0:
-            raise ValueError("The data must not contain negative values.")
-
         if isinstance(X, np.ndarray):
+            if np.nanmin(X) < 0:
+                raise ValueError("The data must not contain negative values.")
             if self.v is None:
                 self.thresholds_ = np.nanpercentile(X, q=self.q, axis=0)
             else:
                 self.thresholds_ = np.full(shape=X.shape[1], fill_value=self.v)
         if isinstance(X, pd.DataFrame):
             if self.columns is None:
+                if np.nanmin(X) < 0:
+                    raise ValueError("The data must not contain negative values.")
                 if self.v is None:
                     self.thresholds_ = X.quantile(q=self.q / 100.0).values
                 else:
                     self.thresholds_ = pd.Series(data=self.v, index=X.columns).values
             else:
+                if np.nanmin(X[self.columns]) < 0:
+                    raise ValueError("The data must not contain negative values.")
                 if self.v is None:
                     self.thresholds_ = X[self.columns].quantile(q=self.q / 100.0).values
                 else:
