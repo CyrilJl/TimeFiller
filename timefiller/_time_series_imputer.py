@@ -183,20 +183,22 @@ class TimeSeriesImputer:
             lag = lags[k]
             m1, m2, v1, v2, cov = 0.0, 0.0, 0.0, 0.0, 0.0
             count = 0.0
+            count_next = 1.0
             for i in range(n):
                 j = i + lag
                 s1i, s2j = s1[i], s2[j]
                 if (j >= 0) and (j < n) and np.isfinite(s1i) and np.isfinite(s2j):
-                    m1u = (count * m1 + s1i) / (count + 1.0)
-                    m2u = (count * m2 + s2j) / (count + 1.0)
-                    if count != 0:
+                    m1u = (count * m1 + s1i) / count_next
+                    m2u = (count * m2 + s2j) / count_next
+                    if count:
                         d1 = s1i - m1
                         d2u = s2j - m2u
-                        v1 = ((count - 1.0) * v1 + d1 * (s1i - m1u)) / (count)
-                        v2 = ((count - 1.0) * v2 + (s2j - m2) * d2u) / (count)
+                        v1 = ((count - 1.0) * v1 + d1 * (s1i - m1u)) / count
+                        v2 = ((count - 1.0) * v2 + (s2j - m2) * d2u) / count
                         cov += d1 * d2u / count
-                        cov *= count / (1.0 + count)
+                        cov *= count / count_next
                     count += 1.0
+                    count_next += 1.0
                     m1, m2 = m1u, m2u
             cross_corr[lag + max_lags] = count / (count - 1) * cov / np.sqrt(v1 * v2)
         return lags, cross_corr
