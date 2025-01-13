@@ -6,7 +6,7 @@ from numba import njit, prange
 from sklearn.pipeline import make_pipeline
 from tqdm.auto import tqdm
 
-from ._misc import check_params
+from ._misc import InvalidSubsetError, check_params
 from ._multivariate_imputer import ImputeMultiVariate
 
 
@@ -123,13 +123,13 @@ class TimeSeriesImputer:
         """
         if ar_lags == "auto":
             return "auto"
-        if isinstance(ar_lags, int):
-            return list(range(-abs(ar_lags), 0)) + list(range(1, abs(ar_lags) + 1))
+        if isinstance(ar_lags, int) and ar_lags > 0:
+            return tuple(range(-abs(ar_lags), 0)) + tuple(range(1, abs(ar_lags) + 1))
         if isinstance(ar_lags, (list, tuple, np.ndarray)):
-            return sorted(sum([[-k, k] for k in ar_lags if k != 0], []))
+            return tuple(sorted(sum([[-k, k] for k in ar_lags if k != 0], [])))
         if ar_lags is None:
             return None
-        raise ValueError("ar_lags must be an integer, a list, a tuple or None.")
+        raise ValueError("ar_lags must be a positive integer, a list, a tuple or None.")
 
     @staticmethod
     def _sample_features(data, col, n_nearest_covariates, rng):
@@ -274,16 +274,19 @@ class TimeSeriesImputer:
             list: Indices of the columns.
         """
         _, n = X.shape
-        columns = list(X.columns)
         if subset_cols is None:
             return list(range(n))
         if isinstance(subset_cols, str):
-            if subset_cols in columns:
-                return [columns.index(subset_cols)]
+            if subset_cols in X.columns:
+                return [X.columns.get_loc(subset_cols)]
             else:
-                return []
+                raise InvalidSubsetError(message="subset_cols not in X.columns")
         if isinstance(subset_cols, (list, tuple, pd.core.indexes.base.Index)):
-            return [columns.index(_) for _ in subset_cols if _ in columns]
+            if len(np.unique(subset_cols)) < len(subset_cols):
+                raise InvalidSubsetError(message="subset_cols contains duplicates")
+            if any((_ not in X.columns for _ in subset_cols)):
+                raise InvalidSubsetError(message="Some elements of subset_cols are not in X.columns")
+            return [X.columns.get_loc(_) for _ in subset_cols if _ in X.columns]
         raise TypeError()
 
     @staticmethod
@@ -343,7 +346,7 @@ class TimeSeriesImputer:
                 ),
             )
 
-    def _preprocess_data(self, X):
+    def _preprocess_data(self, X: pd.DataFrame) -> pd.DataFrame:
         """
         Applies preprocessing to the data and sets a time frequency.
 
@@ -353,6 +356,8 @@ class TimeSeriesImputer:
         Returns:
             pd.DataFrame: Preprocessed data.
         """
+        if not X.columns.is_unique:
+            raise ValueError("X columns contain duplicates.")
         if self.preprocessing is not None:
             X_ = pd.DataFrame(self.preprocessing.fit_transform(X), index=X.index, columns=X.columns).astype("float32")
         else:
