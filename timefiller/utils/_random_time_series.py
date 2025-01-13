@@ -52,7 +52,7 @@ def generate_random_time_series(
         X_transformed[k - window] = weights @ X[k - window : k]
 
     time_index = pd.date_range(start=start, periods=periods, freq=freq)
-    df = pd.DataFrame(X_transformed, index=time_index, columns=[f"serie {i+1}" for i in range(n)])
+    df = pd.DataFrame(X_transformed, index=time_index, columns=[f"serie {i + 1}" for i in range(n)])
     return df
 
 
