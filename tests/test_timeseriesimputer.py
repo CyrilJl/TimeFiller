@@ -76,6 +76,12 @@ def test_tsi_mapie_uncertainties(pems_data):
 def test_cross_correlation(pems_data):
     max_lags = 100
     col1, col2 = pems_data.sample(n=2, axis=1).columns
-    _, cc = TimeSeriesImputer.cross_correlation(s1=pems_data[col1].values, s2=pems_data[col2].values, max_lags=max_lags)
+    _, cc = TimeSeriesImputer.cross_correlation(
+        s1=pems_data[col1].values,
+        s2=pems_data[col2].values,
+        mask1=(~pems_data[col1].isnull()).values,
+        mask2=(~pems_data[col2].isnull()).values,
+        max_lags=max_lags,
+    )
     cc_test = [pems_data[col1].corr(pems_data[col2].shift(-k)) for k in range(-max_lags, max_lags + 1)]
     assert np.allclose(cc, cc_test)

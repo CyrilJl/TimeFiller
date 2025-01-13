@@ -161,8 +161,10 @@ class TimeSeriesImputer:
             return []
 
     @staticmethod
-    @njit(parallel=True, boundscheck=False, cache=True)
-    def cross_correlation(s1: np.ndarray, s2: np.ndarray, max_lags: int) -> Tuple[np.ndarray, np.ndarray]:
+    @njit(parallel=True, boundscheck=False, fastmath=True, cache=True)
+    def cross_correlation(
+        s1: np.ndarray, s2: np.ndarray, mask1: np.ndarray, mask2: np.ndarray, max_lags: int
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Computes cross-correlation between two series with lags.
         Equivalent to [pd.Series(s1).corr(pd.Series(s2.shift(-lag))) for lag in range(-max_lags, max_lags+1)],
@@ -171,6 +173,8 @@ class TimeSeriesImputer:
         Args:
             s1 (np.ndarray): First numpy array.
             s2 (np.ndarray): Second numpy array.
+            mask1 (np.ndarray): Boolean mask for s1, True for valid values, False for NaN.
+            mask2 (np.ndarray): Boolean mask for s2, True for valid values, False for NaN.
             max_lags (int): Maximum lag to compute.
 
         Returns:
@@ -181,26 +185,26 @@ class TimeSeriesImputer:
         lags = np.arange(-max_lags, max_lags + 1)
         for k in prange(len(lags)):
             lag = lags[k]
-            m1, m2, v1, v2, cov = 0.0, 0.0, 0.0, 0.0, 0.0
-            count = 0.0
-            count_next = 1.0
+            m1, m2, v1, v2, cov = np.float32(0.0), np.float32(0.0), np.float32(0.0), np.float32(0.0), np.float32(0.0)
+            count = np.float32(0.0)
+            count_next = np.float32(1.0)
             for i in range(n):
                 j = i + lag
                 s1i, s2j = s1[i], s2[j]
-                if (j >= 0) and (j < n) and np.isfinite(s1i) and np.isfinite(s2j):
+                if (j >= 0) and (j < n) and mask1[i] and mask2[j]:
                     m1u = (count * m1 + s1i) / count_next
                     m2u = (count * m2 + s2j) / count_next
                     if count:
                         d1 = s1i - m1
                         d2u = s2j - m2u
-                        v1 = ((count - 1.0) * v1 + d1 * (s1i - m1u)) / count
-                        v2 = ((count - 1.0) * v2 + (s2j - m2) * d2u) / count
+                        v1 = ((count - np.float32(1.0)) * v1 + d1 * (s1i - m1u)) / count
+                        v2 = ((count - np.float32(1.0)) * v2 + (s2j - m2) * d2u) / count
                         cov += d1 * d2u / count
                         cov *= count / count_next
-                    count += 1.0
-                    count_next += 1.0
+                    count += np.float32(1.0)
+                    count_next += np.float32(1.0)
                     m1, m2 = m1u, m2u
-            cross_corr[lag + max_lags] = count / (count - 1) * cov / np.sqrt(v1 * v2)
+            cross_corr[lag + max_lags] = count / (count - np.float32(1.0)) * cov / np.sqrt(v1 * v2)
         return lags, cross_corr
 
     @classmethod
@@ -220,7 +224,9 @@ class TimeSeriesImputer:
             raise ValueError("The length of s1 and s2 must be the same.")
         if max_lags == "auto":
             max_lags = min(50, int(0.02 * len(s1)))
-        lags, cc = cls.cross_correlation(s1=s1.values, s2=s2.values, max_lags=max_lags)
+        lags, cc = cls.cross_correlation(
+            s1=s1.values, s2=s2.values, mask1=(~s1.isnull()).values, mask2=(~s2.isnull()).values, max_lags=max_lags
+        )
         ret, cc0 = [], cc[max_lags]
         if cc[lags > 0].max() >= 1.1 * cc0:
             ret.append(lags[lags > 0][cc[lags > 0].argmax()])
