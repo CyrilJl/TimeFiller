@@ -441,7 +441,7 @@ class TimeSeriesImputer:
 
         Note:
             About n_nearest_covariates, the probability of selecting a feature is proportional to:
-            sqrt(|correlation| * co_occurrence_ratio)
+            sqrt(abs(correlation) * co_occurrence_ratio)
             where:
             - correlation is calculated using r_regression between the feature and target
             - co_occurrence_ratio is the proportion of rows where both feature and target are non-null
